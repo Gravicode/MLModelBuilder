@@ -1,0 +1,28 @@
+﻿<MudDialog>
+    <DialogContent>
+        @Message
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    async Task Submit() {
+        await OnClick.InvokeAsync(true);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    void Cancel() => MudDialog.Cancel();
+
+    [Parameter]
+    public string Message { get; set; } = "Yakin ingin menghapus?";
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnClick { get; set; }
+}

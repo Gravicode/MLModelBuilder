@@ -1,0 +1,119 @@
+﻿@layout NoAuthLayout
+@page "/auth/login"
+@page "/loginControl"
+@using System.Web;
+
+@using Microsoft.AspNetCore.WebUtilities
+@inject IJSRuntime jsRuntime
+@inject IToastService toastService
+@inject NavigationManager NavMgr
+@inject ISnackbar Snackbar
+
+<AuthorizeView>
+    <Authorized>
+        <b>Hello, @context.User.Identity.Name!</b>
+        <a class="ml-md-auto btn btn-primary"
+           href="/logout?returnUrl=/"
+           target="_top">Logout</a>
+    </Authorized>
+    <NotAuthorized>
+
+        <MudGrid>
+            <MudItem xs="12">
+                <MudText Align="Align.Center" Typo="Typo.h6">Login</MudText>
+            </MudItem>
+            <MudItem xs="12" sm="12">
+                <MudCard>
+                    <MudCardContent>
+                        <MudTextField Label="Email" HelperText="email Anda"
+                                      @bind-Value="Username" For="@(() => Username)" />
+
+                        <MudTextField Label="Password" HelperText="Password Anda" Class="mt-3"
+                                      @bind-Value="Password" For="@(() => Password)" @onkeyup="KeyUp" InputType="InputType.Password" />
+                        <div class="d-flex align-center justify-space-between">
+                            <MudCheckBox T="bool" Required="false" Label="Ingat Saya" />
+                        </div>
+                    </MudCardContent>
+                    <MudCardActions>
+                        <MudButton ButtonType="ButtonType.Button" @onclick="LoginNow" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2" >Login</MudButton>
+                        <MudButton ButtonType="ButtonType.Button" @onclick="DaftarNow" DisableElevation="true"  Variant="Variant.Filled" Color="Color.Secondary"  Class="mr-2" >Daftar Baru</MudButton>
+                        <MudButton ButtonType="ButtonType.Button" Href="/auth/forgot-password" DisableElevation="true"  Variant="Variant.Filled" Color="Color.Info" >Lupa Password</MudButton>
+                    </MudCardActions>
+                </MudCard>
+            </MudItem>
+           
+            <MudItem xs="12" sm="12">
+                <MudPaper Class="pa-4 mud-height-full">
+                   
+                    @if (showError)
+                    {
+
+                        <MudText Color="@Color.Error">
+                            username/password salah atau tidak terdaftar
+                        </MudText>
+                    }
+                </MudPaper>
+            </MudItem>
+        </MudGrid>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    bool showError = false;
+    string Username = "";
+    string Password = "";
+    async Task KeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await LoginNow();
+            //Console.WriteLine(this.Value);
+        }
+    }
+    private string encode(string param)
+    {
+        return HttpUtility.UrlEncode(param);
+    }
+    async Task DaftarNow()
+    {
+        NavMgr.NavigateTo("/auth/register");
+    }
+    async Task LoginNow()
+    {
+        var ErrMsg = "";
+        if (string.IsNullOrEmpty(Username))
+        {
+            ErrMsg += "Tolong isi username.";
+        }
+        if (string.IsNullOrEmpty(Password))
+        {
+            ErrMsg += "Tolong isi password.";
+        }
+        if (ErrMsg.Length > 0)
+        { 
+            Snackbar.Add(ErrMsg, Severity.Error);
+            //toastService.ShowError(ErrMsg, "Perhatian");
+        }
+        else
+        {
+            string logUrl = $"/login?paramUsername={encode(Username)}&paramPassword={encode(Password)}";
+            await jsRuntime.InvokeAsync<object>("OpenUrl", logUrl);
+        }
+        //NavMgr.NavigateTo(logUrl);
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = NavMgr.ToAbsoluteUri(NavMgr.Uri);
+        if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("result", out var resultString))
+        {
+            var result = bool.Parse(resultString);
+            if (!result)
+            {
+                showError = true;
+                Snackbar.Add("username/password salah atau tidak terdaftar", Severity.Error);
+                //toastService.ShowWarning("username/password salah atau tidak terdaftar", "Perhatian");
+            }
+        }
+    }
+}

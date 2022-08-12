@@ -1,0 +1,116 @@
+﻿@using System.Data
+<MudDialog>
+    <DialogContent>
+        <MudGrid>
+            <MudItem xs="12">
+                @if (DataLookup == null)
+                {
+                    <p><em>Loading...</em></p>
+                }
+                else
+                {
+                    <MudTable T="System.Data.DataRow" Context="item" Items="@DataLookup.AsEnumerable()" Dense="@dense" Hover="@hover" Bordered="@bordered" Striped="@striped" Filter="new Func<DataRow,bool>(FilterFunc1)" @bind-SelectedItem="selectedItem1">
+                        <ToolBarContent>
+                            <MudText Typo="Typo.h6">@Message</MudText>
+                            <MudSpacer />
+                            <MudTextField @bind-Value="searchString1" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                        </ToolBarContent>
+                        <HeaderContent>
+                            @foreach (DataColumn dc in DataLookup.Columns)
+                            {
+                                <MudTh>@dc.ColumnName</MudTh>
+                            }
+                            
+                        </HeaderContent>
+                        <RowTemplate>
+
+
+                            @foreach (DataColumn dc in DataLookup.Columns)
+                            {
+                                <MudTd DataLabel="@dc.ColumnName">@item[dc.ColumnName].ToString()</MudTd>
+                            }
+
+                        
+                        </RowTemplate>
+                        <PagerContent>
+                            <MudTablePager />
+                        </PagerContent>
+                        <NoRecordsContent>
+                            <MudText>Tidak ada item yang ditemukan..</MudText>
+                        </NoRecordsContent>
+                        <LoadingContent>
+                            <MudText>Sabar menunggu...</MudText>
+                        </LoadingContent>
+                    </MudTable>
+
+                    <div class="d-flex flex-wrap mt-4">
+                        <MudSwitch @bind-Checked="@hover" Color="Color.Primary">Hover</MudSwitch>
+                        <MudSwitch @bind-Checked="@dense" Color="Color.Secondary">Dense</MudSwitch>
+                        <MudSwitch @bind-Checked="@striped" Color="Color.Tertiary">Striped</MudSwitch>
+                        <MudSwitch @bind-Checked="@bordered" Color="Color.Warning">Bordered</MudSwitch>
+                    </div>
+                }
+            </MudItem>
+        </MudGrid>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Close">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    #region mudtable
+    private bool dense = true;
+    private bool hover = true;
+    private bool striped = false;
+    private bool bordered = false;
+    private string searchString1 = "";
+    private DataRow selectedItem1 = null;
+
+
+    private bool FilterFunc1(DataRow element) => FilterFunc(element, searchString1);
+
+    private bool FilterFunc(DataRow element, string searchString)
+    {
+        if (string.IsNullOrWhiteSpace(searchString))
+            return true;
+        foreach (DataColumn dc in DataLookup.Columns)
+        {
+            if (element[dc.ColumnName].ToString().Contains(searchString, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+    #endregion
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    async Task Close()
+    {
+        await OnClick.InvokeAsync(true);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    async Task Pilih(DataRow dr)
+    {
+        Dictionary<string, string> selected = new();
+        foreach (DataColumn dc in DataLookup.Columns)
+        {
+            selected[dc.ColumnName] = dr[dc.ColumnName].ToString();
+        }
+        await OnClick.InvokeAsync(true);
+        MudDialog.Close(selected);
+    }
+    [Parameter]
+    public string Message { get; set; } = "Pencarian Data..";
+
+    [Parameter]
+    public DataTable DataLookup { get; set; }
+
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnClick { get; set; }
+}

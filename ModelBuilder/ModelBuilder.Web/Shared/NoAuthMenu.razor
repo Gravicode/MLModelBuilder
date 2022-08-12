@@ -1,0 +1,19 @@
+﻿<MudNavMenu>
+    <MudNavLink Href="/auth/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login">Login</MudNavLink>
+    <MudNavLink Href="/auth/register" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AppRegistration">Register</MudNavLink>
+    <MudNavLink Href="/auth/forgot-password" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Password">Forgot Password</MudNavLink>
+</MudNavMenu>
+
+
+@code {
+    [CascadingParameter]
+    public string Slug { get; set; }
+
+    [Parameter]
+    public string FormName { set; get; } 
+
+    protected override async Task OnInitializedAsync()
+    {
+        FormName = Slug;
+    }
+}

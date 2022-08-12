@@ -1,0 +1,173 @@
+﻿@page "/master/UserProfile"
+
+@inject IJSRuntime jsRuntime
+@inject NavigationManager NavMgr
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+@using System.IO
+<h1>Data User</h1>
+
+<p>Gunakan halaman ini untuk mengatur data user.</p>
+
+
+
+@if (DataUserProfile == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <body onbeforeunload="TestDataTablesRemove('#gridData')">
+        <div class="table-responsive">
+            <table id="gridData" name="gridData" class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nama</th>
+                        <th>Telepon</th>
+                        <th>Email</th>
+                        <th>Status</th>
+                        <th>Alamat</th>
+                        <th>Foto</th>
+
+                        <th>Actions</th>
+                    </tr>
+
+                </thead>
+                <tbody>
+                    @foreach (var item in DataUserProfile)
+                    {
+                        <tr>
+                            <td>@item.FullName</td>
+                            <td>@item.Phone</td>
+                            <td>@item.Email</td>
+                            <td>@(item.Aktif?"Aktif":"Tidak Aktif")</td>
+                            <td>@item.Alamat</td>
+                            <td>
+                                @if (string.IsNullOrEmpty(item.PicUrl))
+                                {
+                                    <p>Tidak ada foto</p>
+                                }
+                                else
+                                {
+                                    <img style="width: 150px; height: 150px;object-fit: cover;" src="@item?.PicUrl?" alt="foto" />
+
+                                }
+                            </td>
+                            <td>
+
+                                @if (HasLogin)
+                                {
+                                    <input type="button" class="btn btn-primary btn-sm mt-1" @onclick="(() => PrepareForEdit(item))" data-toggle="modal" data-target="#taskModal" value="Ubah" />
+                                }
+                                @if (CurrentRole == Roles.Admin)
+                                {
+                                    <input type="button" class="btn btn-danger btn-sm mt-1" @onclick="(() => PrepareForDelete(item))" data-toggle="modal" data-target="#confirmDeleteModal" value="Hapus" />
+                                }
+                            </td>
+
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </body>
+}
+@if (HasLogin)
+{
+    <div>
+        <input type="button" data-toggle="modal" data-target="#taskModal" class="btn btn-primary" value="Tambah User" @onclick="(() => InitializeitemObject())" />
+    </div>
+}
+
+<ConfirmDialog OnClick="@Delete" />
+<UserProfileDetail @ref="detail" TaskObject=@itemObject DataChanged="@DataChanged">
+    <CustomHeader>@customHeader</CustomHeader>
+</UserProfileDetail>
+
+@code {
+    bool HasLogin = false;
+    UserProfileDetail detail;
+    UserProfileService service;
+    string customHeader = string.Empty;
+    List<UserProfile> DataUserProfile;
+    UserProfile itemObject = new UserProfile();
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    Roles CurrentRole;
+
+  
+    UserProfileService Userservice;
+    protected override async Task OnInitializedAsync()
+    {
+
+        if (Userservice == null) Userservice = new UserProfileService();
+        var user = (await authenticationStateTask).User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+            CurrentRole = Userservice.GetUserRole(UserName);
+            HasLogin = CurrentRole != Roles.User;
+        }
+
+        if (service == null) service = new UserProfileService();
+
+
+        RefreshData();
+
+    }
+
+    void RefreshData()
+    {
+        DataUserProfile = service.GetAllData();
+    }
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (DataUserProfile != null && DataUserProfile.Count > 0)
+        {
+
+            await jsRuntime.InvokeAsync<object>("TestDataTablesAdd", "#gridData");
+        }
+
+    }
+
+    private void InitializeitemObject()
+    {
+
+        itemObject = new UserProfile();
+
+
+
+        customHeader = "Tambah User";
+    }
+    private async void DataChanged()
+    {
+        RefreshData();
+        StateHasChanged();
+    }
+
+    private void PrepareForEdit(UserProfile item)
+    {
+        customHeader = "Ubah Data User";
+        itemObject = item;
+        //detail.DocumentUrl = item.DocumentUrl;
+    }
+    private void PrepareForDelete(UserProfile item)
+    {
+        itemObject = item;
+    }
+    private async Task Delete()
+    {
+        var task = service.DeleteData(itemObject.Id);
+        await jsRuntime.InvokeAsync<object>("CloseModal", "confirmDeleteModal");
+        RefreshData();
+        itemObject = new UserProfile() { Id = -1 };
+    }
+
+    private async System.Threading.Tasks.Task applyPager(string TableName)
+    {
+        await jsRuntime.InvokeAsync<object>("applyPager", TableName);
+    }
+
+}

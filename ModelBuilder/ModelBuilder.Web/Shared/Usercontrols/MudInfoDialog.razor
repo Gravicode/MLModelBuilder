@@ -1,0 +1,25 @@
+﻿<MudDialog>
+    <DialogContent>
+        @Message
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    async Task Submit() {
+        await OnClick.InvokeAsync(true);
+        MudDialog.Close(DialogResult.Ok(true));
+    }
+    [Parameter]
+    public string Message { get; set; } = "Info saja";
+    [Parameter]
+    public int Id { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnClick { get; set; }
+}

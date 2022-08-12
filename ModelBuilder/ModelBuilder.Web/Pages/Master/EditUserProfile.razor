@@ -1,0 +1,128 @@
+﻿@page "/master/user-profile"
+
+@inject IJSRuntime jsRuntime
+@using ModelBuilder.Tools
+@using ModelBuilder.Models
+@using ModelBuilder.Web.Data
+@inject NavigationManager NavMgr
+@namespace ModelBuilder.Web.Pages.Master
+@inject IToastService toastService
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
+
+@inject ISnackbar Snackbar
+
+<MudGrid>
+    <MudItem xs="12">
+        <MudText Align="Align.Center" Typo="Typo.h6">Profil Saya</MudText>
+    </MudItem>
+    <MudItem xs="12" sm="12">
+        <MudCard>
+            <MudCardContent>
+                <MudTextField Label="Nama Lengkap" HelperText="Nama Anda"
+                              @bind-Value="DataUser.FullName" For="@(() => DataUser.FullName)" />
+
+                <MudTextField Label="Telepon" HelperText="No Hp Anda" Class="mt-3"
+                              @bind-Value="DataUser.Phone" For="@(() => DataUser.Phone)" InputType="InputType.Telephone" />
+
+                <MudTextField Label="Alamat" HelperText="Alamat Anda" Class="mt-3"
+                              @bind-Value="DataUser.Alamat" For="@(() => DataUser.Alamat)" InputType="InputType.Text" />
+
+
+
+                <MudTextField Label="Password" HelperText="Password Anda" Class="mt-3"
+                              @bind-Value="DataUser.Password" For="@(() => DataUser.Password)" InputType="InputType.Password" />
+
+                <MudTextField Label="Ulang Password" HelperText="Ulang Password Anda" Class="mt-3"
+                              @bind-Value="RetypePass" For="@(() => RetypePass)" InputType="InputType.Password" />
+
+
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton ButtonType="ButtonType.Button" @onclick="Simpan" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Simpan</MudButton>
+                <MudButton ButtonType="ButtonType.Button" @onclick="Kembali" DisableElevation="true" Variant="Variant.Filled" Color="Color.Secondary" Class="mr-2">Kembali</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </MudItem>
+
+</MudGrid>
+
+
+
+@code {
+    UserProfile DataUser = new UserProfile();
+    UserProfileService service;
+    string RetypePass;
+    string ErrorMsg = string.Empty;
+    bool RegisterSuccess = false;
+    Encryption enc;
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+
+    protected override async Task OnInitializedAsync()
+    {
+        enc = new Encryption();
+        if (service == null) service = new UserProfileService();
+        var user = (await authenticationStateTask).User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+            DataUser = service.GetItemByEmail(UserName);
+            //DataUser.Password = enc.Decrypt(DataUser.Password);
+        }
+
+
+    }
+    void Simpan()
+    {
+        ErrorMsg = "";
+
+
+        if (string.IsNullOrEmpty(DataUser.Password))
+        {
+            ErrorMsg += "Tolong di isi password. ";
+
+        }
+        if (string.IsNullOrEmpty(DataUser.Phone))
+        {
+            ErrorMsg += "Tolong di isi no hp. ";
+
+        }
+        if (string.IsNullOrEmpty(DataUser.FullName))
+        {
+            ErrorMsg += "Tolong di isi nama lengkap. ";
+
+        }
+        if (string.IsNullOrEmpty(DataUser.Alamat))
+        {
+            ErrorMsg += "Tolong di isi alamat. ";
+
+        }
+        if (DataUser.Password != RetypePass)
+        {
+            ErrorMsg += "Password tidak sesuai dengan ulang password. ";
+
+        }
+
+        if (ErrorMsg.Length > 0)
+        {
+            Snackbar.Add(ErrorMsg, Severity.Error);
+            //toastService.ShowWarning(ErrorMsg, "Perhatian");
+            return;
+        }
+
+        DataUser.Email = DataUser.Username;
+        DataUser.Password = enc.Encrypt(DataUser.Password);
+        if (service.UpdateData(DataUser))
+        {
+            Snackbar.Add("Profile Anda sudah berhasil di update. Terima kasih", Severity.Success);
+            //toastService.ShowSuccess("Profile Anda sudah berhasil di update. Terima kasih", "Info");
+        }
+    }
+
+    void Kembali()
+    {
+        NavMgr.NavigateTo("/");
+    }
+}

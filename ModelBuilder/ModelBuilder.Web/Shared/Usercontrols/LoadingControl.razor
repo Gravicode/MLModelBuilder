@@ -1,0 +1,42 @@
+﻿@if (IsVisible)
+{
+    <MudPaper Class="pa-4 mt-4" Elevation="3">
+        <MudText Typo="Typo.body1">@Message</MudText>
+        @if (Jenis == TipeLoading.Circular)
+        {
+            <MudProgressCircular Color="Color.Primary" Size="Size.Large" Value="@ProgressValue" Indeterminate="@TanpaProgress" />
+        }
+        else
+        {
+            <MudProgressLinear Color="Color.Primary" Striped="true" Size="Size.Large" Value="@ProgressValue" Indeterminate="@TanpaProgress" Class="my-7">
+                @if (!TanpaProgress)
+                {
+                    <MudText Typo="Typo.subtitle1" Color="Color.Dark">
+                        <b>@ProgressValue %</b>
+                    </MudText>
+                }
+            </MudProgressLinear>
+        }
+    </MudPaper>
+}
+@code {
+
+    public enum TipeLoading { Circular, Bar }
+
+    [Parameter]
+    public TipeLoading Jenis { get; set; } = TipeLoading.Circular;
+
+
+    [Parameter]
+    public string Message { get; set; } = "Sedang proses, sabar menunggu..";
+
+    [Parameter]
+    public double ProgressValue { get; set; } = 0;
+
+    [Parameter]
+    public bool TanpaProgress { get; set; } = true;
+
+    [Parameter]
+    public bool IsVisible { get; set; } = true;
+
+}

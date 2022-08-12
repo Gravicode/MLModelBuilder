@@ -1,0 +1,261 @@
+﻿@inject IJSRuntime jsRuntime
+@using System.IO
+@using ModelBuilder.Core.Builder
+@using System.Data
+@using ModelBuilder.Core.Helpers
+@inject IToastService toastService
+@inject MLModelService service
+@inject AzureBlobHelper blob;
+@inject IDialogService DialogService
+
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-3 mb-n1" />
+            @CustomHeader
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+        <EditForm Model="@TaskObject" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <MudGrid>
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardContent>
+                            <input type="hidden" @bind="@TaskObject.Id" />
+                            <MudTextField Label="Nama" HelperText="Nama MLModel"
+                                          @bind-Value="TaskObject.Nama" For="@(() => TaskObject.Nama)" />
+
+                            <MudDatePicker Label="Tanggal Pasang" Class="mt-3"
+                                           @bind-Date="TaskObject.Tanggal" For="@(() => TaskObject.Tanggal)" />
+
+                            <MudSelect T="string" Label="Tipe" @bind-Value="@TaskObject.Tipe" AnchorOrigin="Origin.BottomCenter">
+                                @foreach (ModelTypes enumValue in Enum.GetValues(typeof(ModelTypes)))
+                                {
+                                    <MudSelectItem Value="@(enumValue.ToString())">@enumValue.ToString()</MudSelectItem>
+                                }
+
+
+                            </MudSelect>
+
+                            <MudTextField Label="Deskripsi" Class="mt-3"
+                                          @bind-Value="TaskObject.Deskripsi" For="@(() => TaskObject.Deskripsi)" InputType="InputType.Text" />
+
+                            <MudButton HtmlTag="label" Class="mr-2"
+                                       Variant="Variant.Filled"
+                                       Color="Color.Primary"
+                                       StartIcon="@Icons.Filled.CloudUpload"
+                                       for="fileInput1">
+                                Upload Dataset
+                            </MudButton>
+
+                            <InputFile id="fileInput1" Size="Size.Small" OnChange="UploadFiles" hidden />
+                            @if (TableDataSet != null)
+                            {
+                                <MudButton ButtonType="ButtonType.Button" Size="Size.Small" @onclick="OpenDataPreview" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2 mt-2 mb-2">Preview Dataset</MudButton>
+                                <MudSelect T="string" Label="Label" @bind-Value="@TaskObject.LabelName" AnchorOrigin="Origin.BottomCenter">
+                                    @foreach (DataColumn dc in TableDataSet.Columns)
+                                    {
+                                        <MudSelectItem Value="@(dc.ColumnName)">@dc.ColumnName</MudSelectItem>
+                                    }
+                                </MudSelect>
+                                <MudTextField Label="Test Fraction" Class="mt-3"
+                                          @bind-Value="Fraction" InputType="InputType.Text" />
+                                <MudTextField Label="Separator" Class="mt-3"
+                                          @bind-Value="Separator" For="@(() => Separator)" InputType="InputType.Text" />
+                                <MudTextField Label="Duration" Class="mt-3"
+                                          @bind-Value="Duration" For="@(() => Duration)" InputType="InputType.Number" />
+                                <MudButton ButtonType="MudBlazor.ButtonType.Button" Size="Size.Small" @onclick="TrainModel" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2 mt-2">Train Model</MudButton>
+                                @if (IsTraining)
+                                {
+                                    <MudPaper Class="pa-4 mt-4" Elevation="3">
+
+                                        <MudText Typo="Typo.h6">Train Model in progress</MudText>
+                                        <MudText Typo="Typo.body1">Harap menunggu...</MudText>
+                                        <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                                    </MudPaper>
+
+                                }
+                                <MudText Typo="Typo.h6">Training Logs</MudText>
+                                <MudSpacer></MudSpacer>
+                                <MudContainer Style="max-height: 300px; overflow-y: scroll">
+
+                                    <MudText Style="white-space: pre-wrap;">@Logs</MudText>
+
+                                </MudContainer>
+
+                            }
+
+
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Simpan</MudButton>
+                            <MudButton ButtonType="ButtonType.Button" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+            </MudGrid>
+        </EditForm>
+    </DialogContent>
+    <DialogActions>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+    double Fraction = 0.2;
+    string Separator = ",";
+    uint Duration = 60;
+    EventLogger mylog;
+    string Logs;
+    DataTable TableDataSet;
+    string UID;
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+    bool IsTraining = false;
+    [Parameter]
+    public string CustomHeader { get; set; }
+    [Parameter]
+    public MLModel TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+    [CascadingParameter]
+    private Task<AuthenticationState> authenticationStateTask { get; set; }
+    string UserName;
+    bool HasLogin = false;
+    protected override async Task OnInitializedAsync()
+    {
+        var user = (await authenticationStateTask).User;
+
+        if (user.Identity.IsAuthenticated)
+        {
+            UserName = user.Identity.Name;
+            HasLogin = true;// Userservice.GetUserRole(UserName) == Roles.Admin;
+        }
+        UID = Guid.NewGuid().ToString().Replace("-", "_");
+        mylog = ConsoleHelper.GetEventLogger();
+        mylog.PrintData += (object sender, string e) => { Logs += e; };
+        if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
+            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath);
+        }
+    }
+
+
+    private void OnValidSubmit(EditContext context)
+    {
+        if (TaskObject.Id == 0)
+        {
+
+            var hasil = service.InsertData(TaskObject);
+            if (!hasil)
+            {
+                Snackbar.Add("Gagal menyimpan data. Isi data dengan lengkap.", Severity.Error);
+                //toastService.ShowError("Gagal menyimpan data. Isi data dengan lengkap.", "Perhatian");
+            }
+        }
+        else
+        {
+            service.UpdateData(TaskObject);
+        }
+
+        //In a real world scenario this bool would probably be a service to delete the item from api/database
+        Snackbar.Add("Data Saved", Severity.Success);
+        MudDialog.Close(DialogResult.Ok(TaskObject.Id));
+        DataChanged?.Invoke();
+    }
+
+    async Task OpenDataPreview()
+    {
+        var parameters = new DialogParameters { ["Message"] = "Lihat dataset..", ["DataLookup"] = TableDataSet };
+        var options = new MudBlazor.DialogOptions { CloseOnEscapeKey = true, FullWidth = true };
+        var dialog = DialogService.Show<LookUpDialog>("Dataset", parameters, options);
+        var result = await dialog.Result;
+        if (result.Data is Dictionary<string, string> obj)
+        {
+
+        }
+    }
+    async Task TrainModel()
+    {
+        string ErrorLabel=string.Empty;
+        if (string.IsNullOrEmpty(TaskObject.Tipe)) ErrorLabel="Tipe pilih dulu.";
+        if (string.IsNullOrEmpty(TaskObject.DatasetPath)) ErrorLabel="Dataset upload dulu.";
+        if (string.IsNullOrEmpty(TaskObject.LabelName)) ErrorLabel="Label pilih dulu.";
+        if (string.IsNullOrEmpty(Separator)) ErrorLabel="Separator isi dulu.";
+        if (Duration<=10) ErrorLabel="Minimal 10 detik lah.";
+        if (Fraction<=0 || Fraction>0.99) ErrorLabel="Fraction itu 0.1 - 0.5 lah normalnya";
+        if(!string.IsNullOrEmpty(ErrorLabel)){
+            Snackbar.Add(ErrorLabel, Severity.Error);
+            return;
+        }
+        IsTraining=true;
+        await Task.Delay(1);
+        var tipe = Enum.Parse<ModelTypes>(TaskObject.Tipe);
+        var folder = Environment.SpecialFolder.LocalApplicationData;
+        var path = Environment.GetFolderPath(folder);
+        string ModelName = $"model_{UserName}_{UID}.zip";
+        var ModelPath = System.IO.Path.Join(path, $"/Models");
+        if (!Directory.Exists(ModelPath))
+        {
+            Directory.CreateDirectory(ModelPath);
+        }
+        ModelPath += $"/{ModelName}";
+        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration);
+        if (hasil.IsSucceed)
+        {
+            TaskObject.ModelPath = ModelPath;
+            Snackbar.Add("Model berhasil dibuat", Severity.Success);
+        }
+        else
+        {
+            Snackbar.Add("Gagal membuat model", Severity.Error);
+            TaskObject.ModelPath = string.Empty;
+        }
+        IsTraining=false;
+    }
+    private async Task UploadFiles(InputFileChangeEventArgs e)
+    {
+        var file = e.File;
+        if (file != null)
+        {
+            var ms = new MemoryStream();
+            await file.OpenReadStream().CopyToAsync(ms);
+            string Ext = Path.GetExtension(file.Name);
+            string newName = $"dataset_{UserName}_{UID}{Ext}";
+            var folder = Environment.SpecialFolder.LocalApplicationData;
+            var path = Environment.GetFolderPath(folder);
+            var DatasetPath = System.IO.Path.Join(path, $"/Dataset");
+            if (!Directory.Exists(DatasetPath))
+            {
+                Directory.CreateDirectory(DatasetPath);
+            }
+            DatasetPath = DatasetPath + $"/{newName}";
+            File.WriteAllBytes(DatasetPath, ms.ToArray());
+            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath);
+            TaskObject.DatasetPath = DatasetPath;
+            GetColumns();
+        }
+    }
+
+    void GetColumns()
+    {
+        var cols = new List<string>();
+        if (TableDataSet != null)
+        {
+            foreach(DataColumn dc in TableDataSet.Columns)
+            {
+                cols.Add(dc.ColumnName);
+            }
+        }
+        var columns = string.Join(",",cols);
+        TaskObject.Kolom = columns;
+    }
+}
