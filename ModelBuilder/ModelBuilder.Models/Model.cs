@@ -15,6 +15,7 @@ namespace ModelBuilder.Models
         public string Nama { get; set; }
         public string Tipe { get; set; }
         public string Kolom { get; set; }
+        public string TipeKolom { get; set; }
         public string DatasetPath { get; set; }
         public string ModelPath { get; set; }
         public string LabelName { get; set; }

@@ -20,6 +20,7 @@
     <DialogContent>
         <EditForm Model="@TaskObject" OnValidSubmit="OnValidSubmit">
             <DataAnnotationsValidator />
+            <MudContainer Style="overflow-y:scroll;max-height:400px;">
             <MudGrid>
                 <MudItem xs="12" sm="12">
                     <MudCard>
@@ -43,7 +44,7 @@
                             <MudTextField Label="Deskripsi" Class="mt-3"
                                           @bind-Value="TaskObject.Deskripsi" For="@(() => TaskObject.Deskripsi)" InputType="InputType.Text" />
 
-                            <MudButton HtmlTag="label" Class="mr-2"
+                            <MudButton HtmlTag="label" Class="mr-2" Disabled="@IsTraining"
                                        Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Filled.CloudUpload"
@@ -67,9 +68,10 @@
                                           @bind-Value="Separator" For="@(() => Separator)" InputType="InputType.Text" />
                                 <MudTextField Label="Duration" Class="mt-3"
                                           @bind-Value="Duration" For="@(() => Duration)" InputType="InputType.Number" />
-                                <MudButton ButtonType="MudBlazor.ButtonType.Button" Size="Size.Small" @onclick="TrainModel" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2 mt-2">Train Model</MudButton>
+                                <MudButton ButtonType="MudBlazor.ButtonType.Button" Disabled="@IsTraining" Size="Size.Small" @onclick="TrainModel" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2 mt-2">Train Model</MudButton>
                                 @if (IsTraining)
-                                {
+                                { 
+                                    <MudButton ButtonType="MudBlazor.ButtonType.Button" Size="Size.Small" @onclick="CancelTrain" Variant="Variant.Outlined" Color="Color.Warning" Class="mr-2 mt-2">Stop Training</MudButton>
                                     <MudPaper Class="pa-4 mt-4" Elevation="3">
 
                                         <MudText Typo="Typo.h6">Train Model in progress</MudText>
@@ -91,13 +93,14 @@
 
                         </MudCardContent>
                         <MudCardActions>
-                            <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Simpan</MudButton>
-                            <MudButton ButtonType="ButtonType.Button" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
+                            <MudButton ButtonType="ButtonType.Submit" Disabled="@IsTraining" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Simpan</MudButton>
+                            <MudButton ButtonType="ButtonType.Button" Disabled="@IsTraining" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
 
             </MudGrid>
+            </MudContainer>
         </EditForm>
     </DialogContent>
     <DialogActions>
@@ -107,6 +110,7 @@
 
 
 @code {
+    CancellationTokenSource cts;
     double Fraction = 0.2;
     string Separator = ",";
     uint Duration = 60;
@@ -148,6 +152,11 @@
         }
     }
 
+    async Task CancelTrain(){
+        if(cts!=null && IsTraining){
+            cts.Cancel();
+        }
+    }
 
     private void OnValidSubmit(EditContext context)
     {
@@ -197,18 +206,19 @@
             return;
         }
         IsTraining=true;
+        if (cts == null) cts = new CancellationTokenSource();
         await Task.Delay(1);
         var tipe = Enum.Parse<ModelTypes>(TaskObject.Tipe);
         var folder = Environment.SpecialFolder.LocalApplicationData;
         var path = Environment.GetFolderPath(folder);
         string ModelName = $"model_{UserName}_{UID}.zip";
-        var ModelPath = System.IO.Path.Join(path, $"/Models");
+        var ModelPath = System.IO.Path.Join(path, $"/model-builder/Models");
         if (!Directory.Exists(ModelPath))
         {
             Directory.CreateDirectory(ModelPath);
         }
         ModelPath += $"/{ModelName}";
-        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration);
+        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration,cts);
         if (hasil.IsSucceed)
         {
             TaskObject.ModelPath = ModelPath;
@@ -232,7 +242,7 @@
             string newName = $"dataset_{UserName}_{UID}{Ext}";
             var folder = Environment.SpecialFolder.LocalApplicationData;
             var path = Environment.GetFolderPath(folder);
-            var DatasetPath = System.IO.Path.Join(path, $"/Dataset");
+            var DatasetPath = System.IO.Path.Join(path, $"/model-builder/Dataset");
             if (!Directory.Exists(DatasetPath))
             {
                 Directory.CreateDirectory(DatasetPath);
@@ -242,9 +252,14 @@
             TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath);
             TaskObject.DatasetPath = DatasetPath;
             GetColumns();
+            GetColumnTypes();
         }
     }
-
+    void GetColumnTypes()
+    {
+        var cols = DataConverter.GetColumnTypes(TableDataSet);
+        TaskObject.TipeKolom = string.Join(",", cols);
+    }
     void GetColumns()
     {
         var cols = new List<string>();

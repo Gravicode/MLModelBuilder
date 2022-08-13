@@ -96,9 +96,54 @@ namespace ModelBuilder.Core.Helpers
             return T;
         }
 
+        
     }
     public class DataConverter
     {
+        public static string[] GetColumnTypes(DataTable dt)
+        {
+            if (dt.Columns.Count <= 0 || dt.Rows.Count <= 0) return null;
+            try
+            {
+                var cols = new List<string>();
+                var dh = new DataHelper();
+                foreach (DataColumn dc in dt.Columns)
+                {
+                    var rowVal = dt.Rows[0][dc].ToString();
+                    var tipe = dh.ParseString(rowVal);
+                    string kind = "System.String";
+                    switch (tipe)
+                    {
+                        case DataHelper.dataType.System_DateTime:
+                            kind = "System.DateTime";
+                            break;
+                        case DataHelper.dataType.System_Int64:
+                            kind = "System.Single";
+                            break;
+                        case DataHelper.dataType.System_String:
+                            kind = "System.String";
+                            break;
+                        case DataHelper.dataType.System_Double:
+                            kind = "System.Single";
+                            break;
+                        case DataHelper.dataType.System_Boolean:
+                            kind = "System.Boolean";
+                            break;
+                        case DataHelper.dataType.System_Int32:
+                            kind = "System.Single";
+                            break;
+                    }
+                    cols.Add(kind);
+                }
+                return cols.ToArray();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                return null;
+            }
+          
+        }
         public static DataTable ConvertCSVtoDataTable(string strFilePath)
         {
             DataTable dt = new DataTable();

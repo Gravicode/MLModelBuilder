@@ -48,7 +48,7 @@ namespace ModelBuilder.Core.Builder
         /// <param name="Separator"></param>
         /// <param name="TrainDuration"></param>
         /// <returns></returns>
-        public static async Task<OutputCls> DoAutoML(ModelTypes Tipe, string DataPath, string ModelPath,string LabelColumn, char[] Separator, double TestFraction=0.2, uint TrainDuration = 60)
+        public static async Task<OutputCls> DoAutoML(ModelTypes Tipe, string DataPath, string ModelPath,string LabelColumn, char[] Separator, double TestFraction=0.2, uint TrainDuration = 60,CancellationTokenSource cts=null)
         {
             var output = new OutputCls();
             var mlContext = new MLContext();
@@ -105,7 +105,12 @@ namespace ModelBuilder.Core.Builder
                     case ModelTypes.Regression:
                         {
                             var handler = new RegressionExperimentProgressHandler();
-                            var experiment = mlContext.Auto().CreateRegressionExperiment(maxExperimentTimeInSeconds: TrainDuration);
+                            var setting = new RegressionExperimentSettings() {  };
+                            setting.MaxExperimentTimeInSeconds = TrainDuration;
+                            if(cts!=null)
+                                setting.CancellationToken = cts.Token;
+                            var experiment = mlContext.Auto().CreateRegressionExperiment(setting);
+
                             var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
 
                             ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
@@ -119,7 +124,11 @@ namespace ModelBuilder.Core.Builder
                     case ModelTypes.BinaryClassification:
                         {
                             var handler = new BinaryExperimentProgressHandler();
-                            var experiment = mlContext.Auto().CreateBinaryClassificationExperiment(maxExperimentTimeInSeconds: TrainDuration);
+                            var setting = new BinaryExperimentSettings() { };
+                            setting.MaxExperimentTimeInSeconds = TrainDuration;
+                            if (cts != null)
+                                setting.CancellationToken = cts.Token;
+                            var experiment =mlContext.Auto().CreateBinaryClassificationExperiment(setting);
                             var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
 
                             ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
@@ -133,7 +142,11 @@ namespace ModelBuilder.Core.Builder
                     case ModelTypes.MultiClassification:
                         {
                             var handler = new MulticlassExperimentProgressHandler();
-                            var experiment = mlContext.Auto().CreateMulticlassClassificationExperiment(maxExperimentTimeInSeconds: TrainDuration);
+                            var setting = new MulticlassExperimentSettings() { };
+                            setting.MaxExperimentTimeInSeconds = TrainDuration;
+                            if (cts != null)
+                                setting.CancellationToken = cts.Token;
+                            var experiment = mlContext.Auto().CreateMulticlassClassificationExperiment(setting);
                             var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
 
                             ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
@@ -147,7 +160,11 @@ namespace ModelBuilder.Core.Builder
                     case ModelTypes.Ranking:
                         {
                             var handler = new RankingExperimentProgressHandler();
-                            var experiment = mlContext.Auto().CreateRankingExperiment(maxExperimentTimeInSeconds: TrainDuration);
+                            var setting = new RankingExperimentSettings() { };
+                            setting.MaxExperimentTimeInSeconds = TrainDuration;
+                            if (cts != null)
+                                setting.CancellationToken = cts.Token;
+                            var experiment = mlContext.Auto().CreateRankingExperiment(setting);
                             var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
 
                             ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
@@ -161,7 +178,11 @@ namespace ModelBuilder.Core.Builder
                     case ModelTypes.Recommendation:
                         {
                             var handler = new RegressionExperimentProgressHandler();
-                            var experiment = mlContext.Auto().CreateRecommendationExperiment(maxExperimentTimeInSeconds: TrainDuration);
+                            var setting = new RecommendationExperimentSettings() { };
+                            setting.MaxExperimentTimeInSeconds = TrainDuration;
+                            if (cts != null)
+                                setting.CancellationToken = cts.Token;
+                            var experiment = mlContext.Auto().CreateRecommendationExperiment(setting);
                             var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
                            
                             ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
