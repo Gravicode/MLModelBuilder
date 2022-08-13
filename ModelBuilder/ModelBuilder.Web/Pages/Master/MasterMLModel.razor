@@ -42,7 +42,7 @@ else
                 {
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForEdit(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Ubah</MudButton>
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForDelete(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Error" Class="mr-2">Hapus</MudButton>
-                <MudButton ButtonType="ButtonType.Button" @onclick="(() => CallApi(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Info" Class="mr-2">Call Api</MudButton>
+                <MudButton ButtonType="ButtonType.Button" @onclick="(() => ExecuteModel(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Info" Class="mr-2">Run</MudButton>
                 }
         </MudTd>
     </RowTemplate>
@@ -63,7 +63,7 @@ else
 @if (HasLogin)
 {
     <MudPaper Class="pa-4 mt-4">
-        <MudButton ButtonType="ButtonType.Button" @onclick="(() => InitializeitemObject())" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Masukan MLModel Baru</MudButton>
+        <MudButton ButtonType="ButtonType.Button" @onclick="(() => InitializeitemObject())" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Buat MLModel Baru</MudButton>
     </MudPaper>
 }
 
@@ -184,14 +184,14 @@ else
 
     } 
     
-    private async Task CallApi(MLModel item)
+    private async Task ExecuteModel(MLModel item)
     {
-        customHeader = "Call API MLModel";
+        customHeader = "Run MLModel";
         itemObject = item;
         var action = new Action(DataChanged);
         var parameters = new DialogParameters { ["TaskObject"] = itemObject, ["CustomHeader"] = customHeader, ["DataChanged"] = action };
 
-        var dialog = DialogService.Show<CallApiPage>(customHeader, parameters);
+        var dialog = DialogService.Show<RunModelPage>(customHeader, parameters);
         var result = await dialog.Result;
 
         if (!result.Cancelled)

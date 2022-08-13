@@ -10,7 +10,7 @@ namespace ModelBuilder.Core.Builder
         /// <summary>
         /// Using the CS-Script
         /// </summary>
-        public async Task<ExpandoObject> ExecuteCode(List<ModelParameter> Params, string ModelPath)
+        public async Task<ExpandoObject> ExecuteCode(List<ModelParameter> Params, string ModelPath,string MLType)
         {
 
             var hasil = await Task.Run<ExpandoObject>(() =>
@@ -48,17 +48,23 @@ namespace ModelBuilder.Core.Builder
                         [ColumnName(""{param.ColName}"")]
                         public {param.ColOutType} {param.FieldName} {{ get; set; }}";
                     }
-
-                    classCode += @"
+                    var ScoreType = MLType switch
+                    {
+                        "MultiClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        "BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        _ => "float"
+                    };
+                
+                    classCode += $@"
                     [ColumnName(""Features"")]
-                    public float[] Features { get; set; }
+                    public float[] Features {{ get; set; }}
 
                     [ColumnName(""Score"")]
-                    public float Score { get; set; }
-                }
+                    public {ScoreType} Score {{ get; set; }}
+                }}
 
                 public ExpandoObject Run()
-                {
+                {{
 
                     var input = new ModelInput();
 
@@ -66,8 +72,8 @@ namespace ModelBuilder.Core.Builder
                     foreach (var param in Params)
                     {
                         classCode += $@"
-                        input.{param.FieldName} = {(param.ColType == "string" ? $@"""{param.ColData}""" : param.ColData)};";
-
+                        input.{param.FieldName} = {(param.ColType == "string" ? $@"""{param.ColData}""" : param.ColData+"f")};";
+                        
                     }
                     classCode += $@"var MPath = @""{ModelPath}"";";
                     classCode += @"

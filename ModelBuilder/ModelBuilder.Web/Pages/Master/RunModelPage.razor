@@ -1,6 +1,7 @@
 ﻿@inject IJSRuntime jsRuntime
 @using System.IO
 @using ModelBuilder.Core.Builder
+@using System.Text
 @inject IToastService toastService
 @inject MLModelService service
 @inject AzureBlobHelper blob;
@@ -15,26 +16,39 @@
         </MudText>
     </TitleContent>
     <DialogContent>
+        <MudContainer Style="overflow-y:scroll;max-height:400px;">
             <MudGrid>
                 <MudItem xs="12" sm="12">
                     <MudCard>
                         <MudCardContent>
-                            
-                          @foreach(var item in ParamObj){
-                            
-                            <MudTextField T="string" Label="@item.ColName" HelperText="@item.ColType"
-                                          @bind-Value="@item.ColData"   />
+
+                            @foreach (var item in ParamObj)
+                            {
+
+                                <MudTextField T="string" Label="@item.ColName" HelperText="@item.ColType"
+                                          @bind-Value="@item.ColData" />
                             }
-                             @if (IsInferencing)
-                                { 
-                                    <MudPaper Class="pa-4 mt-4" Elevation="3">
+                            @if (IsInferencing)
+                            {
+                                <MudPaper Class="pa-4 mt-4" Elevation="3">
 
-                                        <MudText Typo="Typo.h6">Eksekusi Model in progress</MudText>
-                                        <MudText Typo="Typo.body1">Harap menunggu...</MudText>
-                                        <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
-                                    </MudPaper>
+                                    <MudText Typo="Typo.h6">Eksekusi Model in progress</MudText>
+                                    <MudText Typo="Typo.body1">Harap menunggu...</MudText>
+                                    <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                                </MudPaper>
 
-                                }
+                            }
+                            @if (!string.IsNullOrEmpty(Result))
+                            {
+                                <MudText Typo="Typo.h6">Model Output</MudText>
+                                <MudSpacer></MudSpacer>
+                                <MudContainer Style="max-height: 200px; overflow-y: scroll">
+
+                                    <MudText Style="white-space: pre-wrap;">@Result</MudText>
+
+                                </MudContainer>
+
+                            }
                         </MudCardContent>
                         <MudCardActions>
                             <MudButton Disabled="@IsInferencing" ButtonType="ButtonType.Button" OnClick="Inference" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Call API</MudButton>
@@ -44,6 +58,7 @@
                 </MudItem>
 
             </MudGrid>
+        </MudContainer>
     </DialogContent>
     <DialogActions>
 
@@ -53,7 +68,7 @@
 
 @code {
     bool IsInferencing = false;
-
+    string Result;
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     private void Cancel()
@@ -86,7 +101,7 @@
     void GenerateColumns()
     {
         InputData = new ModelInference.ModelInput();
-        OutputData=new();
+        OutputData = new();
 
         Columns = TaskObject.Kolom.Split(",");
         ColumnTypes = TaskObject.TipeKolom.Split(",");
@@ -124,9 +139,25 @@
                     break;
 
             }
+            if (Columns[i] == TaskObject.LabelName)
+            {
+
+                switch (TaskObject.Tipe)
+                {
+                    case "MultiClassification":
+                    case "BinaryClassification":
+                        OutTypes = "UInt32";
+
+
+                        break;
+                    default:
+                        break;
+                }
+
+            }
             //InputData.AddField(fieldName, ColumnTypes[i], Columns[i], data);
             //OutputData.AddField(fieldName, OutTypes, Columns[i], data);
-            ParamObj.Add(new ModelParameter() { ColOutType=OutTypes, FieldName = fieldName, ColName = Columns[i], ColType=InTypes, ColData = string.Empty });
+            ParamObj.Add(new ModelParameter() { ColOutType = OutTypes, FieldName = fieldName, ColName = Columns[i], ColType = InTypes, ColData = string.Empty });
         }
 
     }
@@ -139,22 +170,36 @@
         if (IsInferencing) return;
         IsInferencing = true;
         await Task.Delay(1);
-        ModelExecutor exec = new  ModelExecutor ();
-        for(var i = 0; i < ParamObj.Count; i++)
+        ModelExecutor exec = new ModelExecutor();
+        for (var i = 0; i < ParamObj.Count; i++)
         {
             if (string.IsNullOrEmpty(ParamObj[i].ColData))
             {
                 if (ParamObj[i].ColType == "float")
                 {
-                    ParamObj[i].ColData = "0f";
+                    ParamObj[i].ColData = "0";
                 }
             }
         }
-        var res = await exec.ExecuteCode(ParamObj, TaskObject.ModelPath);
+        var res = await exec.ExecuteCode(ParamObj, TaskObject.ModelPath, TaskObject.Tipe);
         IsInferencing = false;
-        //ModelInference inference = new  ();
-        //var output = inference.Predict(TaskObject.ModelPath, InputData);
-        //Snackbar.Add($"Hasil : {output.IsSucceed}", Severity.Info);
+        Result = PropertyList(res);
+        Snackbar.Add($"Completed", Severity.Info);
 
+    }
+    public string PropertyList(System.Dynamic.ExpandoObject obj)
+    {
+        var props = obj.GetType().GetProperties();
+        var sb = new StringBuilder();
+
+        foreach (KeyValuePair<string, object> kvp in obj) // enumerating over it exposes the Properties and Values as a KeyValuePair
+            if (kvp.Value is Microsoft.ML.Data.VBuffer<Single>)
+            {
+                var vals = string.Join(",", ((Microsoft.ML.Data.VBuffer<Single>)kvp.Value).GetValues().ToArray());
+                sb.AppendLine($"{kvp.Key} = {vals}");
+            }
+            else
+                sb.AppendLine($"{kvp.Key} = {kvp.Value}");
+        return sb.ToString();
     }
 }
