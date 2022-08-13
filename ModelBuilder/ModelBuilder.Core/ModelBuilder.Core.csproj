@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CS-Script" Version="4.4.6" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.2.0" />
     <PackageReference Include="Microsoft.ML.AutoML" Version="0.20.0-preview.22313.1" />
@@ -19,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ModelBuilder.Models\ModelBuilder.Models.csproj" />
+    <ProjectReference Include="..\ModelBuilder.Tools\ModelBuilder.Tools.csproj" />
   </ItemGroup>
 
 </Project>

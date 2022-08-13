@@ -25,10 +25,20 @@
                             <MudTextField T="string" Label="@item.ColName" HelperText="@item.ColType"
                                           @bind-Value="@item.ColData"   />
                             }
+                             @if (IsInferencing)
+                                { 
+                                    <MudPaper Class="pa-4 mt-4" Elevation="3">
+
+                                        <MudText Typo="Typo.h6">Eksekusi Model in progress</MudText>
+                                        <MudText Typo="Typo.body1">Harap menunggu...</MudText>
+                                        <MudProgressCircular Color="Color.Primary" Size="Size.Medium" Indeterminate="true" />
+                                    </MudPaper>
+
+                                }
                         </MudCardContent>
                         <MudCardActions>
-                            <MudButton ButtonType="ButtonType.Button" OnClick="Inference" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Call API</MudButton>
-                            <MudButton ButtonType="ButtonType.Button" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
+                            <MudButton Disabled="@IsInferencing" ButtonType="ButtonType.Button" OnClick="Inference" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Call API</MudButton>
+                            <MudButton Disabled="@IsInferencing" ButtonType="ButtonType.Button" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
                         </MudCardActions>
                     </MudCard>
                 </MudItem>
@@ -42,8 +52,7 @@
 
 
 @code {
-
-
+    bool IsInferencing = false;
 
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
@@ -97,12 +106,12 @@
             {
                 case "System.String":
                     data = string.Empty;
-                    OutTypes = "float[]";
+                    OutTypes = "string";
                     InTypes = "string";
                     break;
                 case "System.Boolean":
                     data = true;
-                    OutTypes = "float";
+                    OutTypes = "bool";
                     InTypes = "bool";
                     break;
                 case "System.Single":
@@ -127,6 +136,9 @@
     }
     async Task Inference()
     {
+        if (IsInferencing) return;
+        IsInferencing = true;
+        await Task.Delay(1);
         ModelExecutor exec = new  ModelExecutor ();
         for(var i = 0; i < ParamObj.Count; i++)
         {
@@ -138,7 +150,8 @@
                 }
             }
         }
-        exec.ExecuteCode(ParamObj, TaskObject.ModelPath);
+        var res = await exec.ExecuteCode(ParamObj, TaskObject.ModelPath);
+        IsInferencing = false;
         //ModelInference inference = new  ();
         //var output = inference.Predict(TaskObject.ModelPath, InputData);
         //Snackbar.Add($"Hasil : {output.IsSucceed}", Severity.Info);
