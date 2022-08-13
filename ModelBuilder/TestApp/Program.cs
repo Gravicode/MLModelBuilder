@@ -83,5 +83,7 @@ foreach (var prop in person.GetProperties())
     Console.WriteLine($"{prop.PropertyName} : {prop.PropertyValue}");
 }
 
+Single[] xx = new[] { 1f,2f,3f };
+Console.WriteLine("tipe:"+xx.GetType().ToString());
 Console.ReadLine();
 

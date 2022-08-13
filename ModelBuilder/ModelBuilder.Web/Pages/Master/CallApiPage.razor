@@ -1,0 +1,128 @@
+﻿@inject IJSRuntime jsRuntime
+@using System.IO
+@using ModelBuilder.Core.Builder
+@inject IToastService toastService
+@inject MLModelService service
+@inject AzureBlobHelper blob;
+
+@inject ISnackbar Snackbar
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h6">
+            <MudIcon Icon="@Icons.Material.Filled.Info" Class="mr-3 mb-n1" />
+            @CustomHeader
+        </MudText>
+    </TitleContent>
+    <DialogContent>
+            <MudGrid>
+                <MudItem xs="12" sm="12">
+                    <MudCard>
+                        <MudCardContent>
+                            
+                            @for(var index=0;index<ParamObj.Count;index++){
+                            <MudTextField T="string" Label="@Columns[index]" HelperText="@ColumnTypes[index]"
+                                          @bind-Value="ParamObj[index]" For="()=>ParamObj[index]"  />
+                            }
+                        </MudCardContent>
+                        <MudCardActions>
+                            <MudButton ButtonType="ButtonType.Button" OnClick="Inference" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Call API</MudButton>
+                            <MudButton ButtonType="ButtonType.Button" OnClick="Cancel" Variant="Variant.Filled" Color="Color.Secondary">Cancel</MudButton>
+                        </MudCardActions>
+                    </MudCard>
+                </MudItem>
+
+            </MudGrid>
+    </DialogContent>
+    <DialogActions>
+
+    </DialogActions>
+</MudDialog>
+
+
+@code {
+
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    private void Cancel()
+    {
+        MudDialog.Cancel();
+    }
+
+    public List<string> ParamObj { set; get; }
+
+    [Parameter]
+    public string CustomHeader { get; set; }
+    [Parameter]
+    public MLModel TaskObject { get; set; }
+    [Parameter]
+    public Action DataChanged { get; set; }
+
+    string[] Columns;
+    string[] ColumnTypes;
+    Core.Builder.ModelInference.ModelInput InputData;
+    Core.Builder.ModelInference.ModelOutput OutputData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (!string.IsNullOrEmpty(TaskObject.Kolom))
+        {
+            GenerateColumns();
+        }
+    }
+
+    void GenerateColumns()
+    {
+        InputData = new ModelInference.ModelInput();
+        OutputData=new();
+
+        Columns = TaskObject.Kolom.Split(",");
+        ColumnTypes = TaskObject.TipeKolom.Split(",");
+        for (var i = 0; i < Columns.Length; i++)
+        {
+
+            var fieldName = ColumnHelper.GetFieldName(Columns[i]);
+            object data = null;
+            object dataOut = null;
+            string OutTypes = "System.Single[]";
+            switch (ColumnTypes[i])
+            {
+                case "System.String":
+                    data = string.Empty;
+                    OutTypes = "System.Single[]";
+                    break;
+                case "System.Boolean":
+                    data = true;
+                    OutTypes = "System.Single";
+
+                    break;
+                case "System.Single":
+                    data = 0f;
+                    OutTypes = "System.Single";
+                    break;
+                default:
+                    data = string.Empty;
+                    break;
+
+            }
+            InputData.AddField(fieldName, ColumnTypes[i], Columns[i], data);
+            OutputData.AddField(fieldName, OutTypes, Columns[i], data);
+        }
+        ParamObj = new();
+        for(var i=0;i<Columns.Length;i++)
+        {
+            ParamObj.Add(string.Empty);
+        }
+    }
+    private void OnValidSubmit(EditContext context)
+    {
+
+    }
+    async Task Inference()
+    {
+        ModelInference inference = new  ();
+        var output = inference.Predict(TaskObject.ModelPath, InputData);
+        Snackbar.Add($"Hasil : {output.IsSucceed}", Severity.Info);
+
+    }
+}

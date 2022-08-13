@@ -16,24 +16,7 @@ namespace ModelBuilder.Core.Builder
     public enum ModelTypes { Regression, BinaryClassification, MultiClassification, Ranking, Recommendation};
     public class ModelFactory
     {
-        //public List<OutputCls> Predict(string ModelPath, Dictionary<string,string> Params)
-        //{
-           
-        //    MLContext mlContext = new MLContext();
-        //    // Create sample data to do a single prediction with it 
-          
-           
-        //        ITransformer mlModel = mlContext.Model.Load(ModelPath, out DataViewSchema inputSchema);
-        //        var predEngine = mlContext.Model.CreatePredictionEngine<>
-
-        //        // Try a single prediction
-        //        ModelOutput predictionResult = predEngine.Predict(inputData);
-
-        //        ConsoleHelper.Print($"Prediction [{ItemModel}] --> Predicted value: {predictionResult.Score}");
-        //        datas.Add(new ResultPrediction() { ElementName = ItemModel, ElementValue = predictionResult.Score });
-            
-        //    return datas;
-        //}
+        
 
         //Microsoft.ML.AutoML.ExperimentResult<T>
         /// <summary>

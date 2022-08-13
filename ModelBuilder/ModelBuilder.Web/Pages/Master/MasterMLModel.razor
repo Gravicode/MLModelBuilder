@@ -42,6 +42,7 @@ else
                 {
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForEdit(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Ubah</MudButton>
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForDelete(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Error" Class="mr-2">Hapus</MudButton>
+                <MudButton ButtonType="ButtonType.Button" @onclick="(() => CallApi(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Info" Class="mr-2">Call Api</MudButton>
                 }
         </MudTd>
     </RowTemplate>
@@ -179,6 +180,23 @@ else
         {
             //In a real world scenario we would reload the data from the source here since we "removed" it in the dialog already.
             long.TryParse(result.Data.ToString(), out var NewId);
+        }
+
+    } 
+    
+    private async Task CallApi(MLModel item)
+    {
+        customHeader = "Call API MLModel";
+        itemObject = item;
+        var action = new Action(DataChanged);
+        var parameters = new DialogParameters { ["TaskObject"] = itemObject, ["CustomHeader"] = customHeader, ["DataChanged"] = action };
+
+        var dialog = DialogService.Show<CallApiPage>(customHeader, parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+           
         }
 
     }
