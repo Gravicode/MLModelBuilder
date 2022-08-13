@@ -24,6 +24,7 @@ namespace ModelBuilder.Core.Builder
             FieldValue = fieldValue;
         }
     }
+
     public class DynamicClass : DynamicObject
     {
         private Dictionary<string, KeyValuePair<Type, object>> _fields;

@@ -44,4 +44,13 @@ namespace ModelBuilder.Models
     }
 
     public enum Roles { Admin, User, Operator }
+
+    public class ModelParameter
+    {
+        public string FieldName { set; get; }
+        public string ColName { set; get; }
+        public string ColType { set; get; }
+        public string ColOutType { set; get; }
+        public string ColData { set; get; }
+    }
 }

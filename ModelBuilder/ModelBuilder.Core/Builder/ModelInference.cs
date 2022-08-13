@@ -37,7 +37,7 @@ namespace ModelBuilder.Core.Builder
             [ColumnName(@"Score")]
             public float Score { get; set; }
         }
-
+        /*
         public OutputCls Predict(string ModelPath, ModelInput inputData)
         {
             var output = new OutputCls();
@@ -45,18 +45,23 @@ namespace ModelBuilder.Core.Builder
             {
                 MLContext mlContext = new MLContext();
                 // Create sample data to do a single prediction with it 
+                //var secondListType = typeof(ModelInput).MakeGenericType(inputData.GetType());
+                //var secondList = (ModelInput)Activator.CreateInstance(secondListType);
 
 
                 ITransformer mlModel = mlContext.Model.Load(ModelPath, out DataViewSchema inputSchema);
-                var predEngine = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(mlModel, inputSchema);
+                //var predEngine = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(mlModel, inputSchema);
+                var input = mlContext.Data.LoadFromEnumerable(new List<ModelInput>() { inputData }, inputSchema);
 
+                var xx = mlModel.Transform(input);
+                var res = xx.Preview();
 
                 // Try a single prediction
-                ModelOutput predictionResult = predEngine.Predict(inputData);
+                //ModelOutput predictionResult = predEngine.Predict(inputData);
 
-                ConsoleHelper.WriteToLog($"Prediction [hasil] --> Predicted value: {predictionResult.Score}");
+                //ConsoleHelper.WriteToLog($"Prediction [hasil] --> Predicted value: {predictionResult.Score}");
 
-                output.Data = predictionResult;
+                //output.Data = predictionResult;
                 output.IsSucceed = true;
             }
             catch (Exception ex)
@@ -66,6 +71,6 @@ namespace ModelBuilder.Core.Builder
                 
             }
             return output;
-        }
+        }*/
     }
 }

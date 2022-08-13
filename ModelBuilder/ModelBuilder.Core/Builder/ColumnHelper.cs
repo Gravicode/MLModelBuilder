@@ -10,7 +10,7 @@ namespace ModelBuilder.Core.Builder
     {
         public static string GetFieldName(string ColumnName)
         {
-            return ColumnName.Replace(" ", "_").Replace("-", "_").ToCamelCase().ToCleanASCII();
+            return ColumnName.Replace(" ", "_").Replace("-", "_").ToCleanASCII();
         }
 
         

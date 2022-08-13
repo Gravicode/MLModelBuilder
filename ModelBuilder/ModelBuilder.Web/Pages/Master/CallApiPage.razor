@@ -20,9 +20,10 @@
                     <MudCard>
                         <MudCardContent>
                             
-                            @for(var index=0;index<ParamObj.Count;index++){
-                            <MudTextField T="string" Label="@Columns[index]" HelperText="@ColumnTypes[index]"
-                                          @bind-Value="ParamObj[index]" For="()=>ParamObj[index]"  />
+                          @foreach(var item in ParamObj){
+                            
+                            <MudTextField T="string" Label="@item.ColName" HelperText="@item.ColType"
+                                          @bind-Value="@item.ColData"   />
                             }
                         </MudCardContent>
                         <MudCardActions>
@@ -42,6 +43,8 @@
 
 @code {
 
+
+
     [CascadingParameter] MudDialogInstance MudDialog { get; set; }
 
     private void Cancel()
@@ -49,7 +52,7 @@
         MudDialog.Cancel();
     }
 
-    public List<string> ParamObj { set; get; }
+    public List<ModelParameter> ParamObj { set; get; }
 
     [Parameter]
     public string CustomHeader { get; set; }
@@ -78,41 +81,45 @@
 
         Columns = TaskObject.Kolom.Split(",");
         ColumnTypes = TaskObject.TipeKolom.Split(",");
+        if (ParamObj == null)
+        {
+            ParamObj = new();
+        }
         for (var i = 0; i < Columns.Length; i++)
         {
 
             var fieldName = ColumnHelper.GetFieldName(Columns[i]);
             object data = null;
             object dataOut = null;
-            string OutTypes = "System.Single[]";
+            string OutTypes = "float[]";
+            string InTypes = "string";
             switch (ColumnTypes[i])
             {
                 case "System.String":
                     data = string.Empty;
-                    OutTypes = "System.Single[]";
+                    OutTypes = "float[]";
+                    InTypes = "string";
                     break;
                 case "System.Boolean":
                     data = true;
-                    OutTypes = "System.Single";
-
+                    OutTypes = "float";
+                    InTypes = "bool";
                     break;
                 case "System.Single":
                     data = 0f;
-                    OutTypes = "System.Single";
+                    OutTypes = "float";
+                    InTypes = "float";
                     break;
                 default:
                     data = string.Empty;
                     break;
 
             }
-            InputData.AddField(fieldName, ColumnTypes[i], Columns[i], data);
-            OutputData.AddField(fieldName, OutTypes, Columns[i], data);
+            //InputData.AddField(fieldName, ColumnTypes[i], Columns[i], data);
+            //OutputData.AddField(fieldName, OutTypes, Columns[i], data);
+            ParamObj.Add(new ModelParameter() { ColOutType=OutTypes, FieldName = fieldName, ColName = Columns[i], ColType=InTypes, ColData = string.Empty });
         }
-        ParamObj = new();
-        for(var i=0;i<Columns.Length;i++)
-        {
-            ParamObj.Add(string.Empty);
-        }
+
     }
     private void OnValidSubmit(EditContext context)
     {
@@ -120,9 +127,21 @@
     }
     async Task Inference()
     {
-        ModelInference inference = new  ();
-        var output = inference.Predict(TaskObject.ModelPath, InputData);
-        Snackbar.Add($"Hasil : {output.IsSucceed}", Severity.Info);
+        ModelExecutor exec = new  ModelExecutor ();
+        for(var i = 0; i < ParamObj.Count; i++)
+        {
+            if (string.IsNullOrEmpty(ParamObj[i].ColData))
+            {
+                if (ParamObj[i].ColType == "float")
+                {
+                    ParamObj[i].ColData = "0f";
+                }
+            }
+        }
+        exec.ExecuteCode(ParamObj, TaskObject.ModelPath);
+        //ModelInference inference = new  ();
+        //var output = inference.Predict(TaskObject.ModelPath, InputData);
+        //Snackbar.Add($"Hasil : {output.IsSucceed}", Severity.Info);
 
     }
 }
