@@ -9,6 +9,8 @@ using ModelBuilder.Web.Helpers;
 using MudBlazor;
 using ModelBuilder.Models;
 using ModelBuilder.Web.Services;
+using Newtonsoft.Json;
+using System.Dynamic;
 
 var builder = WebApplication.CreateBuilder(args);
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -147,7 +149,18 @@ app.MapPost("/batch-inference", async (InferenceModelParam data) =>
     try
     {
         BatchInferenceService svc = new BatchInferenceService(data.ModelId);
-        var res = await svc.Inference(data);        
+        var res = await svc.Inference(data);
+        if (res.Data is List<ExpandoObject> listItems) {
+            foreach(var item in listItems) { 
+            dynamic obj = item as ExpandoObject;
+            foreach (KeyValuePair<string, object> kvp in obj) // enumerating over it exposes the Properties and Values as a KeyValuePair
+            if (kvp.Value is Microsoft.ML.Data.VBuffer<Single>)
+                {
+                    var vals = string.Join(",", ((Microsoft.ML.Data.VBuffer<Single>)kvp.Value).GetValues().ToArray());
+                    obj.ScoreF = vals;
+                }
+            }
+        }
         return Results.Ok(res);
     }
     catch (Exception ex)
@@ -159,3 +172,10 @@ app.MapPost("/batch-inference", async (InferenceModelParam data) =>
 
 app.Run();
 
+public static class ListHelper
+{
+    public static string ToStringExtended(this Microsoft.ML.Data.VBuffer<Single> list)
+    {
+        return string.Join(", ", list.GetValues().ToArray());
+    }
+}

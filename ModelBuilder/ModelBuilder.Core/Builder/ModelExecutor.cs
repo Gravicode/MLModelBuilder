@@ -2,23 +2,54 @@
 using CSScriptLib;
 using System.Dynamic;
 using ModelBuilder.Tools;
+using System.IO;
 
 namespace ModelBuilder.Core.Builder
 {
     public class ModelExecutor
     {
+        public static void ClearAsmJunk()
+        {
+            var asmPath = GetAsmPath();
+            var files = Directory.GetFiles(asmPath, "*.dll");
+            foreach(var file in files)
+            {
+                try
+                {
+                    File.Delete(file);
+                }
+                catch (Exception ex)
+                {
+
+                    Console.WriteLine($"cannot delete:{ex.ToString()}");
+                }
+               
+            }
+        }
+        static string GetAsmPath()
+        {
+            var folder = Environment.SpecialFolder.LocalApplicationData;
+            var path = Environment.GetFolderPath(folder);
+            var AsmPath = System.IO.Path.Join(path, $"/model-builder/Asm");
+            if (!Directory.Exists(AsmPath))
+            {
+                Directory.CreateDirectory(AsmPath);
+            }
+            return AsmPath;
+        }
         /// <summary>
         /// Using the CS-Script
         /// </summary>
         public async Task<ExpandoObject> ExecuteCode(List<ModelParameter> Params, string ModelPath,string MLType)
         {
-
+            var AsmPath = string.Empty;
+           
             var hasil = await Task.Run<ExpandoObject>(() =>
             {
                 try
                 {
-
-                    var info = new CompileInfo { RootClass = "ml_script", AssemblyFile = $"script_{NumberGen.GenerateNumber(5)}.dll" };
+                    AsmPath = GetAsmPath() + $"/script_{NumberGen.GenerateNumber(5)}.dll";
+                    var info = new CompileInfo { RootClass = "ml_script", AssemblyFile = AsmPath};
                     var classCode = @"
             using Microsoft.ML;
             using Microsoft.ML.Data;
@@ -76,7 +107,7 @@ namespace ModelBuilder.Core.Builder
                         classCode+= param.ColType switch
                         {
                             "string" => $@"""{param.ColData}"";",
-                            "float" => param.ColData + "f;",
+                            "float" => "(float)" + float.Parse(param.ColData).ToString() + ";",
                             _ => param.ColData + ";"
                         };
                         
@@ -141,6 +172,13 @@ namespace ModelBuilder.Core.Builder
                     errorObj.Message = ex.ToString();
                     return Task.FromResult(errorObj);
                 }
+                finally
+                {
+                    if (File.Exists(AsmPath))
+                    {
+                        //File.Delete(AsmPath);
+                    }
+                }
                 dynamic defaultObj = new ExpandoObject();
                 defaultObj.Message = "Nothing to see..";
                 return Task.FromResult(defaultObj);
@@ -154,13 +192,14 @@ namespace ModelBuilder.Core.Builder
         /// </summary>
         public async Task<List<ExpandoObject>> ExecuteCodeBatch(List<ModelParameter[]> ListParams, string ModelPath, string MLType)
         {
-
+            string AsmPath=string.Empty;
             var hasil = await Task.Run<List<ExpandoObject>>(() =>
             {
                 try
                 {
-
-                    var info = new CompileInfo { RootClass = "ml_script", AssemblyFile = $"batch_script_{NumberGen.GenerateNumber(5)}.dll" };
+                    
+                    AsmPath = GetAsmPath() + $"/batch_script_{NumberGen.GenerateNumber(5)}.dll";
+                    var info = new CompileInfo { RootClass = "ml_script", AssemblyFile =AsmPath  };
                     var classCode = @"
             using Microsoft.ML;
             using Microsoft.ML.Data;
@@ -223,7 +262,7 @@ namespace ModelBuilder.Core.Builder
                         classCode += param.ColType switch
                             {
                                 "string" => $@"""{param.ColData}"";",
-                                "float" => param.ColData + "f;",
+                                "float" =>  "(float)" + float.Parse( param.ColData).ToString() + ";",
                                 _ => param.ColData + ";"
                             };
 
@@ -295,6 +334,13 @@ namespace ModelBuilder.Core.Builder
                     errorObj.Message = ex.ToString();
                     var shell = new List<ExpandoObject>() { errorObj };
                     return Task.FromResult(shell);
+                }
+                finally
+                {
+                    if (File.Exists(AsmPath))
+                    {
+                        //File.Delete(AsmPath);
+                    }
                 }
                 dynamic defaultObj = new ExpandoObject();
                 defaultObj.Message = "Nothing to see..";
