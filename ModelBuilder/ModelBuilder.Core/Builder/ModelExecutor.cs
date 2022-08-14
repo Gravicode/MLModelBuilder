@@ -72,7 +72,14 @@ namespace ModelBuilder.Core.Builder
                     foreach (var param in Params)
                     {
                         classCode += $@"
-                        input.{param.FieldName} = {(param.ColType == "string" ? $@"""{param.ColData}""" : param.ColData+"f")};";
+                        input.{param.FieldName} = ";
+                        classCode+= param.ColType switch
+                        {
+                            "string" => $@"""{param.ColData}"";",
+                            "float" => param.ColData + "f;",
+                            _ => param.ColData + ";"
+                        };
+                        
                         
                     }
                     classCode += $@"var MPath = @""{ModelPath}"";";
@@ -137,6 +144,162 @@ namespace ModelBuilder.Core.Builder
                 dynamic defaultObj = new ExpandoObject();
                 defaultObj.Message = "Nothing to see..";
                 return Task.FromResult(defaultObj);
+            });
+            return hasil;
+
+        }
+
+        /// <summary>
+        /// Using the CS-Script
+        /// </summary>
+        public async Task<List<ExpandoObject>> ExecuteCodeBatch(List<ModelParameter[]> ListParams, string ModelPath, string MLType)
+        {
+
+            var hasil = await Task.Run<List<ExpandoObject>>(() =>
+            {
+                try
+                {
+
+                    var info = new CompileInfo { RootClass = "ml_script", AssemblyFile = $"batch_script_{NumberGen.GenerateNumber(5)}.dll" };
+                    var classCode = @"
+            using Microsoft.ML;
+            using Microsoft.ML.Data;
+            using System.Dynamic;
+            using System.Collections.Generic;
+            using System;
+
+                public class RunModel
+                {
+                     public class ModelInput
+                    {";
+                    foreach (var param in ListParams[0])
+                    {
+                        classCode += $@"
+                        [ColumnName(""{param.ColName}"")]
+                        public {param.ColType} {param.FieldName} {{ get; set; }}";
+                    }
+                    classCode += @"
+                }
+
+                public class ModelOutput
+                {
+            ";
+                    foreach (var param in ListParams[0])
+                    {
+                        classCode += $@"
+                        [ColumnName(""{param.ColName}"")]
+                        public {param.ColOutType} {param.FieldName} {{ get; set; }}";
+                    }
+                    var ScoreType = MLType switch
+                    {
+                        "MultiClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        "BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        _ => "float"
+                    };
+
+                    classCode += $@"
+                    [ColumnName(""Features"")]
+                    public float[] Features {{ get; set; }}
+
+                    [ColumnName(""Score"")]
+                    public {ScoreType} Score {{ get; set; }}
+                }}
+
+                public List<ExpandoObject> Run()
+                {{
+                    var inputs = new List<ModelInput>();
+                    
+
+            ";
+                    int count = 0;
+                    foreach (var Params in ListParams)
+                    {
+                        
+                        classCode += $"var input{count} = new ModelInput();";
+                        foreach (var param in Params)
+                        {
+                            classCode += $@"
+                        input{count}.{param.FieldName} =";
+                        classCode += param.ColType switch
+                            {
+                                "string" => $@"""{param.ColData}"";",
+                                "float" => param.ColData + "f;",
+                                _ => param.ColData + ";"
+                            };
+
+                        }
+                        classCode += $"inputs.Add(input{count});";
+                        count++;
+                    }
+                    classCode += $@"var MPath = @""{ModelPath}"";";
+                    classCode += @"
+
+                    var res = Predict(MPath, inputs);
+                    return res;
+
+                }
+
+                public List<ExpandoObject> Predict(string ModelPath, List<ModelInput> inputDatas)
+                {
+
+                    try
+                    {
+                        var results = new List<ExpandoObject>();
+                        MLContext mlContext = new MLContext();
+                        ModelOutput predictionResult;
+                        ITransformer mlModel = mlContext.Model.Load(ModelPath, out DataViewSchema inputSchema);
+                        var predEngine = mlContext.Model.CreatePredictionEngine<ModelInput, ModelOutput>(mlModel, inputSchema);
+
+                        foreach (var inputData in inputDatas)
+                        {
+                        predictionResult = predEngine.Predict(inputData);
+                        var expando = new ExpandoObject();
+                        var dictionary = (IDictionary<string, object>)expando;
+
+                        foreach (var property in predictionResult.GetType().GetProperties())
+                            dictionary.Add(property.Name, property.GetValue(predictionResult));
+                        var obj = (ExpandoObject)dictionary;
+                        results.Add(obj);
+
+                        }
+                        return results;
+                    }
+                    catch (Exception ex)
+                    {
+                        dynamic output = new ExpandoObject();
+                        output.Message = ex.Message;
+                        var shell = new List<ExpandoObject>() { output };
+                        return shell;
+
+                    }
+
+                }
+            }
+            
+            ";
+                    var ml_asm = CSScript.Evaluator
+                                              .CompileCode(
+                                                  classCode, info);
+                    //GetType("ml_script+RunModel").
+                    dynamic instance = ml_asm.CreateInstance("ml_script+RunModel");
+                    var res = instance.Run();//GetMethod("Run").Invoke(null, null);
+                    if (res is List<ExpandoObject> obj)
+                    {
+                        return Task.FromResult(obj);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    dynamic errorObj = new ExpandoObject();
+                    errorObj.Message = ex.ToString();
+                    var shell = new List<ExpandoObject>() { errorObj };
+                    return Task.FromResult(shell);
+                }
+                dynamic defaultObj = new ExpandoObject();
+                defaultObj.Message = "Nothing to see..";
+                var shell2 = new List<ExpandoObject>() { defaultObj };
+                return Task.FromResult(shell2);
             });
             return hasil;
 

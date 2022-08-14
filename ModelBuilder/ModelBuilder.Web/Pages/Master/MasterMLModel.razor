@@ -1,4 +1,5 @@
 ﻿@page "/master/MLModel"
+@inject ISnackbar Snackbar
 
 @inject IJSRuntime jsRuntime
 @inject NavigationManager NavMgr
@@ -43,6 +44,7 @@ else
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForEdit(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Primary" Class="mr-2">Ubah</MudButton>
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => PrepareForDelete(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Error" Class="mr-2">Hapus</MudButton>
                 <MudButton ButtonType="ButtonType.Button" @onclick="(() => ExecuteModel(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Info" Class="mr-2">Run</MudButton>
+                <MudButton ButtonType="ButtonType.Button" @onclick="(() => CallModelApi(item))" DisableElevation="true" Variant="Variant.Filled" Color="Color.Success" Class="mr-2">Api</MudButton>
                 }
         </MudTd>
     </RowTemplate>
@@ -183,15 +185,40 @@ else
         }
 
     } 
-    
+
     private async Task ExecuteModel(MLModel item)
     {
+        if(string.IsNullOrEmpty(item.ModelPath)){
+            Snackbar.Add("Training model terlebih dahulu", Severity.Info);
+            return;
+        }
         customHeader = "Run MLModel";
         itemObject = item;
         var action = new Action(DataChanged);
         var parameters = new DialogParameters { ["TaskObject"] = itemObject, ["CustomHeader"] = customHeader, ["DataChanged"] = action };
 
         var dialog = DialogService.Show<RunModelPage>(customHeader, parameters);
+        var result = await dialog.Result;
+
+        if (!result.Cancelled)
+        {
+           
+        }
+        
+    } 
+    
+    private async Task CallModelApi(MLModel item)
+    {
+        if(string.IsNullOrEmpty(item.ModelPath)){
+            Snackbar.Add("Training model terlebih dahulu", Severity.Info);
+            return;
+        }
+        customHeader = "Call Api MLModel";
+        itemObject = item;
+        var action = new Action(DataChanged);
+        var parameters = new DialogParameters { ["TaskObject"] = itemObject, ["CustomHeader"] = customHeader, ["DataChanged"] = action };
+
+        var dialog = DialogService.Show<ApiModelPage>(customHeader, parameters);
         var result = await dialog.Result;
 
         if (!result.Cancelled)

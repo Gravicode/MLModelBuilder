@@ -7,13 +7,18 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using System.Text;
 using ModelBuilder.Web.Helpers;
 using MudBlazor;
+using ModelBuilder.Models;
+using ModelBuilder.Web.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-
+//swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+//end swagger
 builder.Services.AddMudServices(config =>
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
@@ -101,6 +106,9 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    //swagger
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
@@ -132,6 +140,21 @@ app.MapFallbackToPage("/_Host");
 
 var db = new ModelBuilderDB();
 db.Database.EnsureCreated();
+
+//inference API
+app.MapPost("/batch-inference", async (InferenceModelParam data) =>
+{
+    try
+    {
+        BatchInferenceService svc = new BatchInferenceService(data.ModelId);
+        var res = await svc.Inference(data);        
+        return Results.Ok(res);
+    }
+    catch (Exception ex)
+    {
+        return Results.Problem( ex.ToString());
+    }  
+}).WithName("BatchInference");
 
 
 app.Run();

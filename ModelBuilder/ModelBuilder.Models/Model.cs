@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Runtime.Serialization;
@@ -52,5 +53,17 @@ namespace ModelBuilder.Models
         public string ColType { set; get; }
         public string ColOutType { set; get; }
         public string ColData { set; get; }
+    }
+
+    public class InferenceModelParam
+    {
+        public long ModelId { get; set; }
+        public List<string> Payload { get; set; }
+    }
+    public class OutputCls
+    {
+        public bool IsSucceed { get; set; }
+        public string Message { get; set; }
+        public object Data { get; set; }
     }
 }

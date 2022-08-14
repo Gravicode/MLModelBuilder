@@ -1,7 +1,6 @@
 ﻿using Microsoft.ML;
 using Microsoft.ML.Data;
 using ModelBuilder.Core.Helpers;
-using ModelBuilder.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

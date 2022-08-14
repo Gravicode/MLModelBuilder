@@ -2,7 +2,7 @@
 using Microsoft.ML.AutoML;
 using Microsoft.ML.Data;
 using ModelBuilder.Core.Helpers;
-using ModelBuilder.Core.Models;
+using ModelBuilder.Models;
 using System;
 using System.Collections.Generic;
 using System.Data;

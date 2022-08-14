@@ -82,11 +82,7 @@
                                 }
                                 <MudText Typo="Typo.h6">Training Logs</MudText>
                                 <MudSpacer></MudSpacer>
-                                <MudContainer Style="max-height: 300px; overflow-y: scroll">
-
-                                    <MudText Style="white-space: pre-wrap;">@Logs</MudText>
-
-                                </MudContainer>
+                                <textarea @bind="@Logs" style="width:100%;white-space: pre;height:300px;"/>
 
                             }
 
@@ -146,7 +142,7 @@
         }
         UID = Guid.NewGuid().ToString().Replace("-", "_");
         mylog = ConsoleHelper.GetEventLogger();
-        mylog.PrintData += (object sender, string e) => { Logs += e; };
+        mylog.PrintData += (object sender, string e) => { Logs += e+Environment.NewLine; };
         if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
             TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath);
         }
@@ -199,7 +195,7 @@
         if (string.IsNullOrEmpty(TaskObject.DatasetPath)) ErrorLabel="Dataset upload dulu.";
         if (string.IsNullOrEmpty(TaskObject.LabelName)) ErrorLabel="Label pilih dulu.";
         if (string.IsNullOrEmpty(Separator)) ErrorLabel="Separator isi dulu.";
-        if (Duration<=10) ErrorLabel="Minimal 10 detik lah.";
+        if (Duration<10) ErrorLabel="Minimal 10 detik lah.";
         if (Fraction<=0 || Fraction>0.99) ErrorLabel="Fraction itu 0.1 - 0.5 lah normalnya";
         if(!string.IsNullOrEmpty(ErrorLabel)){
             Snackbar.Add(ErrorLabel, Severity.Error);
