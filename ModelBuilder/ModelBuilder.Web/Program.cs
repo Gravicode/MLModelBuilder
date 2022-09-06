@@ -11,6 +11,8 @@ using ModelBuilder.Models;
 using ModelBuilder.Web.Services;
 using Newtonsoft.Json;
 using System.Dynamic;
+using System.Net;
+using Microsoft.AspNetCore.HttpOverrides;
 
 var builder = WebApplication.CreateBuilder(args);
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -92,7 +94,10 @@ SmsService.UserKey = Configuration["SmsSettings:ZenzivaUserKey"];
 SmsService.PassKey = Configuration["SmsSettings:ZenzivaPassKey"];
 SmsService.TokenKey = Configuration["SmsSettings:TokenKey"];
 
-
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.KnownProxies.Add(IPAddress.Parse("103.189.234.206"));
+});
 
 builder.Services.AddSignalR(hubOptions =>
 {
@@ -102,6 +107,10 @@ builder.Services.AddSignalR(hubOptions =>
 
 var app = builder.Build();
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
@@ -113,7 +122,7 @@ if (!app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
