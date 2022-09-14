@@ -232,23 +232,31 @@
         var file = e.File;
         if (file != null)
         {
-            var ms = new MemoryStream();
-            await file.OpenReadStream().CopyToAsync(ms);
-            string Ext = Path.GetExtension(file.Name);
-            string newName = $"dataset_{UserName}_{UID}{Ext}";
-            var folder = Environment.SpecialFolder.LocalApplicationData;
-            var path = Environment.GetFolderPath(folder);
-            var DatasetPath = System.IO.Path.Join(path, $"/model-builder/Dataset");
-            if (!Directory.Exists(DatasetPath))
+            try
             {
-                Directory.CreateDirectory(DatasetPath);
+                var ms = new MemoryStream();
+                await file.OpenReadStream().CopyToAsync(ms);
+                string Ext = Path.GetExtension(file.Name);
+                string newName = $"dataset_{UserName}_{UID}{Ext}";
+                var folder = Environment.SpecialFolder.LocalApplicationData;
+                var path = Environment.GetFolderPath(folder);
+                var DatasetPath = System.IO.Path.Join(path, $"/model-builder/Dataset");
+                if (!Directory.Exists(DatasetPath))
+                {
+                    Directory.CreateDirectory(DatasetPath);
+                }
+                DatasetPath = DatasetPath + $"/{newName}";
+                File.WriteAllBytes(DatasetPath, ms.ToArray());
+                TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath);
+                TaskObject.DatasetPath = DatasetPath;
+                GetColumns();
+                GetColumnTypes();
             }
-            DatasetPath = DatasetPath + $"/{newName}";
-            File.WriteAllBytes(DatasetPath, ms.ToArray());
-            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath);
-            TaskObject.DatasetPath = DatasetPath;
-            GetColumns();
-            GetColumnTypes();
+            catch (Exception ex)
+            {
+                Console.WriteLine("error upload:"+ex.ToString());
+            }
+
         }
     }
     void GetColumnTypes()
