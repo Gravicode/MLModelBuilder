@@ -140,7 +140,7 @@
             UserName = user.Identity.Name;
             HasLogin = true;// Userservice.GetUserRole(UserName) == Roles.Admin;
         }
-        UID = Guid.NewGuid().ToString().Replace("-", "_");
+        UID = ModelBuilder.Tools.NumberGen.GenerateNumber(5); //Guid.NewGuid().ToString().Replace("-", "_");
         mylog = ConsoleHelper.GetEventLogger();
         mylog.PrintData += (object sender, string e) => { Logs += e+Environment.NewLine; };
         if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
