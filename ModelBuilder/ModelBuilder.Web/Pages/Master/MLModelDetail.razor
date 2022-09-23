@@ -166,7 +166,7 @@
             UserName = user.Identity.Name;
             HasLogin = true;// Userservice.GetUserRole(UserName) == Roles.Admin;
         }
-        UID = Guid.NewGuid().ToString().Replace("-", "_");
+        UID = Guid.NewGuid().ToString().Replace("-", "_");//ModelBuilder.Tools.NumberGen.GenerateNumber(5); //
         mylog = ConsoleHelper.GetEventLogger();
         mylog.PrintData += (object sender, string e) => { Logs += e+Environment.NewLine; };
         if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
@@ -260,7 +260,7 @@
         if (file != null)
         {
             var ms = new MemoryStream();
-            await file.OpenReadStream(MaxFileSize).CopyToAsync(ms);
+            await file.OpenReadStream().CopyToAsync(ms);
             string Ext = Path.GetExtension(file.Name);
             string newName = $"dataset_{UserName}_{UID}{Ext}";
             var folder = Environment.SpecialFolder.LocalApplicationData;

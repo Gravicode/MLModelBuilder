@@ -7,6 +7,9 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+	  <None Remove="runtime.osx.10.10-x64.CoreCompat.System.Drawing" />
+	</ItemGroup>
+	<ItemGroup>
 		<None Include="Pages\Counter.razor" />
 		<None Include="Pages\Error.cshtml" />
 		<None Include="Pages\FetchData.razor" />
@@ -39,6 +42,7 @@
 		<PackageReference Include="System.Net.Http.Formatting.Extension" Version="5.2.3" />
 		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.2.3" />
 
+		<PackageReference Include="runtime.osx.10.10-x64.CoreCompat.System.Drawing" Version="6.0.5.128" />
 	</ItemGroup>
 
 	<ItemGroup>
