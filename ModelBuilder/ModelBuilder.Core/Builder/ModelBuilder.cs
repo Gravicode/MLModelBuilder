@@ -31,7 +31,7 @@ namespace ModelBuilder.Core.Builder
         /// <param name="Separator"></param>
         /// <param name="TrainDuration"></param>
         /// <returns></returns>
-        public static async Task<OutputCls> DoAutoML(ModelTypes Tipe, string DataPath, string ModelPath,string LabelColumn, char[] Separator, double TestFraction=0.2, uint TrainDuration = 60,CancellationTokenSource cts=null)
+        public static async Task<OutputCls> DoAutoML(ModelTypes Tipe, string DataPath, string ModelPath,string LabelColumn, char[] Separator, double TestFraction=0.2, uint TrainDuration = 60, CancellationTokenSource cts = null, string UserColumnName = "", string ItemColumnName = "", string GroupColumnName = "")
         {
             var hasil = await Task.Run<OutputCls>(() =>
             {
@@ -149,8 +149,16 @@ namespace ModelBuilder.Core.Builder
                                 setting.MaxExperimentTimeInSeconds = TrainDuration;
                                 if (cts != null)
                                     setting.CancellationToken = cts.Token;
+                                if (string.IsNullOrEmpty(GroupColumnName)) throw new Exception("Tolong pilih kolom group terlebih dahulu");
+
                                 var experiment = mlContext.Auto().CreateRankingExperiment(setting);
-                                var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
+
+                                var result = experiment.Execute(split.TrainSet, new ColumnInformation()
+                                {
+                                    LabelColumnName = LabelColumn,
+                                    GroupIdColumnName = GroupColumnName
+                                }, progressHandler: handler);
+                                
 
                                 ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
                                 ConsoleHelper.PrintRankingMetrics("Model", result.BestRun.ValidationMetrics, 10);
@@ -167,8 +175,15 @@ namespace ModelBuilder.Core.Builder
                                 setting.MaxExperimentTimeInSeconds = TrainDuration;
                                 if (cts != null)
                                     setting.CancellationToken = cts.Token;
+                                if (string.IsNullOrEmpty(UserColumnName) || string.IsNullOrEmpty(ItemColumnName)) throw new Exception("Tolong pilih kolom userid dan itemid terlebih dahulu");
                                 var experiment = mlContext.Auto().CreateRecommendationExperiment(setting);
-                                var result = experiment.Execute(split.TrainSet, labelColumnName: LabelColumn, progressHandler: handler);
+                                var result = experiment.Execute(split.TrainSet,
+                                new ColumnInformation()
+                                {
+                                    LabelColumnName = LabelColumn,
+                                    UserIdColumnName = UserColumnName,
+                                    ItemIdColumnName = ItemColumnName
+                                }, progressHandler: handler);
 
                                 ConsoleHelper.WriteToLog($"Best Trainer:{result.BestRun.TrainerName}");
                                 ConsoleHelper.PrintRegressionMetrics("Model", result.BestRun.ValidationMetrics);

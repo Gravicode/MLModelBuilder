@@ -1,7 +1,9 @@
 ﻿using Microsoft.ML.Data;
+using SoftCircuits.CsvParser;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -147,6 +149,36 @@ namespace ModelBuilder.Core.Helpers
         public static DataTable ConvertCSVtoDataTable(string strFilePath)
         {
             DataTable dt = new DataTable();
+            string[]? columns;
+          
+            using CsvReader reader = new CsvReader(strFilePath);
+            var row = 0;
+            string[] headers = null;
+            while ((columns = reader.ReadRow()) != null)
+            {
+                if (row <= 0)
+                {
+                    headers = columns;
+                    foreach (string header in columns)
+                    {
+                        dt.Columns.Add(header);
+                    }
+
+                }
+                else
+                {
+                    DataRow dr = dt.NewRow();
+                    for (int i = 0; i < headers.Length; i++)
+                    {
+                        dr[i] = columns[i];
+                    }
+                    dt.Rows.Add(dr);
+
+                }
+                //Console.WriteLine(string.Join(", ", columns));
+                row++;
+            }
+            /*
             using (StreamReader sr = new StreamReader(strFilePath))
             {
                 string[] headers = sr.ReadLine().Split(',');
@@ -165,7 +197,7 @@ namespace ModelBuilder.Core.Helpers
                     dt.Rows.Add(dr);
                 }
 
-            }
+            }*/
 
 
             return dt;

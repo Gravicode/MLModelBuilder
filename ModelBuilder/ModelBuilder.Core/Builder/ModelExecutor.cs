@@ -73,23 +73,27 @@ namespace ModelBuilder.Core.Builder
                 public class ModelOutput
                 {
             ";
-                    foreach (var param in Params)
+                    if (MLType != "Recommendation" && MLType != "Ranking")
                     {
-                        classCode += $@"
+                        foreach (var param in Params)
+                        {
+                            classCode += $@"
                         [ColumnName(""{param.ColName}"")]
                         public {param.ColOutType} {param.FieldName} {{ get; set; }}";
+                        }
+                       
+
+                        classCode += $@"
+                        [ColumnName(""Features"")]
+                        public float[] Features {{ get; set; }}";
                     }
                     var ScoreType = MLType switch
                     {
                         "MultiClassification" => "Microsoft.ML.Data.VBuffer<float>",
-                        "BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        //"BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
                         _ => "float"
                     };
-                
                     classCode += $@"
-                    [ColumnName(""Features"")]
-                    public float[] Features {{ get; set; }}
-
                     [ColumnName(""Score"")]
                     public {ScoreType} Score {{ get; set; }}
                 }}
@@ -223,23 +227,26 @@ namespace ModelBuilder.Core.Builder
                 public class ModelOutput
                 {
             ";
-                    foreach (var param in ListParams[0])
+                    if (MLType != "Recommendation" && MLType != "Ranking")
                     {
-                        classCode += $@"
+                        foreach (var param in ListParams[0])
+                        {
+                            classCode += $@"
                         [ColumnName(""{param.ColName}"")]
                         public {param.ColOutType} {param.FieldName} {{ get; set; }}";
+                        }
+                        classCode += $@"
+                        [ColumnName(""Features"")]
+                        public float[] Features {{ get; set; }}";
+
                     }
                     var ScoreType = MLType switch
                     {
                         "MultiClassification" => "Microsoft.ML.Data.VBuffer<float>",
-                        "BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
+                        //"BinaryClassification" => "Microsoft.ML.Data.VBuffer<float>",
                         _ => "float"
                     };
-
                     classCode += $@"
-                    [ColumnName(""Features"")]
-                    public float[] Features {{ get; set; }}
-
                     [ColumnName(""Score"")]
                     public {ScoreType} Score {{ get; set; }}
                 }}

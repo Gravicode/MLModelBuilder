@@ -20,6 +20,9 @@ namespace ModelBuilder.Models
         public string DatasetPath { get; set; }
         public string ModelPath { get; set; }
         public string LabelName { get; set; }
+        public string UserIdColumn { get; set; } = ""; //untuk rekomendasi saja
+        public string ItemIdColumn { get; set; } = ""; //untuk rekomendasi saja
+        public string GroupIdColumn { get; set; } = ""; //untuk ranking saja
         public string Deskripsi { get; set; }
         public string CreatedBy { get; set; }
         public string HasilTraining { get; set; }

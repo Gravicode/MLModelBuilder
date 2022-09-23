@@ -62,6 +62,32 @@
                                         <MudSelectItem Value="@(dc.ColumnName)">@dc.ColumnName</MudSelectItem>
                                     }
                                 </MudSelect>
+
+                                    @if (TaskObject.Tipe == ModelTypes.Recommendation.ToString())
+                                    {
+                                        <MudSelect T="string" Label="UserId Column" @bind-Value="@TaskObject.UserIdColumn" AnchorOrigin="Origin.BottomCenter">
+                                            @foreach (DataColumn dc in TableDataSet.Columns)
+                                            {
+                                                <MudSelectItem Value="@(dc.ColumnName)">@dc.ColumnName</MudSelectItem>
+                                            }
+                                        </MudSelect> 
+                                        <MudSelect T="string" Label="ItemId Column" @bind-Value="@TaskObject.ItemIdColumn" AnchorOrigin="Origin.BottomCenter">
+                                            @foreach (DataColumn dc in TableDataSet.Columns)
+                                            {
+                                                <MudSelectItem Value="@(dc.ColumnName)">@dc.ColumnName</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                    }
+                                    @if (TaskObject.Tipe == ModelTypes.Ranking.ToString())
+                                    {
+                                        <MudSelect T="string" Label="GroupId Column" @bind-Value="@TaskObject.GroupIdColumn" AnchorOrigin="Origin.BottomCenter">
+                                            @foreach (DataColumn dc in TableDataSet.Columns)
+                                            {
+                                                <MudSelectItem Value="@(dc.ColumnName)">@dc.ColumnName</MudSelectItem>
+                                            }
+                                        </MudSelect>
+                                      
+                                    }
                                 <MudTextField Label="Test Fraction" Class="mt-3"
                                           @bind-Value="Fraction" InputType="InputType.Text" />
                                 <MudTextField Label="Separator" Class="mt-3"
@@ -214,7 +240,7 @@
             Directory.CreateDirectory(ModelPath);
         }
         ModelPath += $"/{ModelName}";
-        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration,cts);
+        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration,cts,TaskObject.UserIdColumn,TaskObject.ItemIdColumn, TaskObject.GroupIdColumn);
         if (hasil.IsSucceed)
         {
             TaskObject.ModelPath = ModelPath;
@@ -227,13 +253,14 @@
         }
         IsTraining=false;
     }
+    const long MaxFileSize = 512_000 * 20;
     private async Task UploadFiles(InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file != null)
         {
             var ms = new MemoryStream();
-            await file.OpenReadStream().CopyToAsync(ms);
+            await file.OpenReadStream(MaxFileSize).CopyToAsync(ms);
             string Ext = Path.GetExtension(file.Name);
             string newName = $"dataset_{UserName}_{UID}{Ext}";
             var folder = Environment.SpecialFolder.LocalApplicationData;

@@ -66,8 +66,12 @@ namespace ModelBuilder.Web.Services
                     switch (TaskObject.Tipe)
                     {
                         case "MultiClassification":
-                        case "BinaryClassification":
                             OutTypes = "UInt32";
+
+
+                            break;
+                        //case "BinaryClassification":
+                        //    OutTypes = "UInt32";
 
 
                             break;

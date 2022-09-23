@@ -25,7 +25,7 @@ namespace ModelBuilder.Web.Data
             DbPath = System.IO.Path.Join(path, "/model-builder");
             if (!Directory.Exists(DbPath))
                 Directory.CreateDirectory(DbPath);
-            DbPath = System.IO.Path.Join(DbPath, "/mlbuilder.db");
+            DbPath = System.IO.Path.Join(DbPath, "/ml.db");
         }
 
         // The following configures EF to create a Sqlite database file in the
