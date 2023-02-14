@@ -19,9 +19,10 @@ namespace ModelBuilder.Web.Data
 
         public ModelBuilderDB()
         {
-            var folder = Environment.SpecialFolder.LocalApplicationData;
-            var path = Environment.GetFolderPath(folder);
 
+            var folder = Environment.SpecialFolder.LocalApplicationData;
+            var path = string.IsNullOrEmpty(AppConstants.LOCAL_DB_FOLDER) ? Environment.GetFolderPath(folder) : AppConstants.LOCAL_DB_FOLDER;
+            
             DbPath = System.IO.Path.Join(path, "/model-builder");
             if (!Directory.Exists(DbPath))
                 Directory.CreateDirectory(DbPath);

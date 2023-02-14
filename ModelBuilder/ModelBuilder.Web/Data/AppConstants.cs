@@ -15,6 +15,7 @@ namespace ModelBuilder.Web.Data
         public const string FACE_ENDPOINT = "https://southeastasia.api.cognitive.microsoft.com/";
 
 
+        public static string LOCAL_DB_FOLDER = "";
         public static string BEARER_TOKEN_EDESK = "";
         
         public static string SQLConn = "";

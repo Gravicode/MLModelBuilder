@@ -94,6 +94,8 @@ SmsService.UserKey = Configuration["SmsSettings:ZenzivaUserKey"];
 SmsService.PassKey = Configuration["SmsSettings:ZenzivaPassKey"];
 SmsService.TokenKey = Configuration["SmsSettings:TokenKey"];
 
+AppConstants.LOCAL_DB_FOLDER = Configuration["LOCAL_DB_FOLDER"];
+
 builder.Services.Configure<ForwardedHeadersOptions>(options =>
 {
     options.KnownProxies.Add(IPAddress.Parse("103.189.234.206"));
