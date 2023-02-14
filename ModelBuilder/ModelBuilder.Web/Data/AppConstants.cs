@@ -7,6 +7,7 @@ namespace ModelBuilder.Web.Data
 {
     public class AppConstants
     {
+        public static long MaxAllowedFileSize = 500 * 1024000;
         public const int FACE_WIDTH = 180;
         public const int FACE_HEIGHT = 135;
         public const string AppName = "ModelBuilder.Web DAK";

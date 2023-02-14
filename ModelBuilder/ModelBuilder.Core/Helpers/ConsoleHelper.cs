@@ -88,9 +88,12 @@ namespace ModelBuilder.Core.Helpers
             WriteToLog($"    MacroAccuracy = {metrics.MacroAccuracy:0.####}, a value from 0 and 1, where closer to 1.0 is better");
             WriteToLog($"    MicroAccuracy = {metrics.MicroAccuracy:0.####}, a value from 0 and 1, where closer to 1.0 is better");
             WriteToLog($"    LogLoss = {metrics.LogLoss:0.####}, the closer to 0, the better");
-            WriteToLog($"    LogLoss for class 1 = {metrics.PerClassLogLoss[0]:0.####}, the closer to 0, the better");
-            WriteToLog($"    LogLoss for class 2 = {metrics.PerClassLogLoss[1]:0.####}, the closer to 0, the better");
-            WriteToLog($"    LogLoss for class 3 = {metrics.PerClassLogLoss[2]:0.####}, the closer to 0, the better");
+            var count = 1;
+            foreach(var logloss in metrics.PerClassLogLoss)
+            {
+                WriteToLog($"    LogLoss for class {count++} = {logloss:0.####}, the closer to 0, the better");
+            }
+          
             WriteToLog($"************************************************************");
         }
 

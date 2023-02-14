@@ -146,12 +146,12 @@ namespace ModelBuilder.Core.Helpers
             }
           
         }
-        public static DataTable ConvertCSVtoDataTable(string strFilePath)
+        public static DataTable ConvertCSVtoDataTable(string strFilePath, char Separator=',')
         {
             DataTable dt = new DataTable();
             string[]? columns;
-          
-            using CsvReader reader = new CsvReader(strFilePath);
+
+            using CsvReader reader = new CsvReader(strFilePath, new CsvSettings() { ColumnDelimiter = Separator, QuoteCharacter = '"' }); 
             var row = 0;
             string[] headers = null;
             while ((columns = reader.ReadRow()) != null)

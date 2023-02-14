@@ -40,7 +40,8 @@
 
 
                             </MudSelect>
-
+                            <MudTextField Label="Separator Dataset" Class="mt-3"
+                                              @bind-Value="TaskObject.Separator" For="@(() => TaskObject.Separator)" MaxLength="1" InputType="InputType.Text" />
                             <MudTextField Label="Deskripsi" Class="mt-3"
                                           @bind-Value="TaskObject.Deskripsi" For="@(() => TaskObject.Deskripsi)" InputType="InputType.Text" />
 
@@ -90,8 +91,7 @@
                                     }
                                 <MudTextField Label="Test Fraction" Class="mt-3"
                                           @bind-Value="Fraction" InputType="InputType.Text" />
-                                <MudTextField Label="Separator" Class="mt-3"
-                                          @bind-Value="Separator" For="@(() => Separator)" InputType="InputType.Text" />
+                                
                                 <MudTextField Label="Duration" Class="mt-3"
                                           @bind-Value="Duration" For="@(() => Duration)" InputType="InputType.Number" />
                                 <MudButton ButtonType="MudBlazor.ButtonType.Button" Disabled="@IsTraining" Size="Size.Small" @onclick="TrainModel" Variant="Variant.Outlined" Color="Color.Success" Class="mr-2 mt-2">Train Model</MudButton>
@@ -134,7 +134,7 @@
 @code {
     CancellationTokenSource cts;
     double Fraction = 0.2;
-    string Separator = ",";
+    //string Separator = ",";
     uint Duration = 60;
     EventLogger mylog;
     string Logs;
@@ -170,7 +170,7 @@
         mylog = ConsoleHelper.GetEventLogger();
         mylog.PrintData += (object sender, string e) => { Logs += e+Environment.NewLine; };
         if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
-            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath);
+            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath,TaskObject.Separator.Trim()[0]);
         }
     }
 
@@ -220,7 +220,7 @@
         if (string.IsNullOrEmpty(TaskObject.Tipe)) ErrorLabel="Tipe pilih dulu.";
         if (string.IsNullOrEmpty(TaskObject.DatasetPath)) ErrorLabel="Dataset upload dulu.";
         if (string.IsNullOrEmpty(TaskObject.LabelName)) ErrorLabel="Label pilih dulu.";
-        if (string.IsNullOrEmpty(Separator)) ErrorLabel="Separator isi dulu.";
+        if (string.IsNullOrEmpty(TaskObject.Separator)) ErrorLabel="Separator isi dulu.";
         if (Duration<10) ErrorLabel="Minimal 10 detik lah.";
         if (Fraction<=0 || Fraction>0.99) ErrorLabel="Fraction itu 0.1 - 0.5 lah normalnya";
         if(!string.IsNullOrEmpty(ErrorLabel)){
@@ -240,7 +240,7 @@
             Directory.CreateDirectory(ModelPath);
         }
         ModelPath += $"/{ModelName}";
-        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  Separator.ToArray(),Fraction, Duration,cts,TaskObject.UserIdColumn,TaskObject.ItemIdColumn, TaskObject.GroupIdColumn);
+        var hasil = await ModelFactory.DoAutoML(tipe, TaskObject.DatasetPath, ModelPath, TaskObject.LabelName,  TaskObject.Separator.ToArray(),Fraction, Duration,cts,TaskObject.UserIdColumn,TaskObject.ItemIdColumn, TaskObject.GroupIdColumn);
         if (hasil.IsSucceed)
         {
             TaskObject.ModelPath = ModelPath;
@@ -253,14 +253,14 @@
         }
         IsTraining=false;
     }
-    const long MaxFileSize = 512_000 * 20;
+    //const long MaxFileSize = 512_000 * 20;
     private async Task UploadFiles(InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file != null)
         {
             var ms = new MemoryStream();
-            await file.OpenReadStream().CopyToAsync(ms);
+            await file.OpenReadStream(AppConstants.MaxAllowedFileSize).CopyToAsync(ms);
             string Ext = Path.GetExtension(file.Name);
             string newName = $"dataset_{UserName}_{UID}{Ext}";
             var folder = Environment.SpecialFolder.LocalApplicationData;
@@ -272,7 +272,7 @@
             }
             DatasetPath = DatasetPath + $"/{newName}";
             File.WriteAllBytes(DatasetPath, ms.ToArray());
-            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath);
+            TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(DatasetPath,TaskObject.Separator.Trim()[0]);
             TaskObject.DatasetPath = DatasetPath;
             GetColumns();
             GetColumnTypes();

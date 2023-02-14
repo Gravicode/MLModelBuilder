@@ -167,7 +167,7 @@
         var item = new InferenceModelParam();
         item.ModelId = TaskObject.Id;
         item.Payload = new();
-        var TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath);
+        var TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath,TaskObject.Separator.Trim()[0]);
         if (TableDataSet.Rows.Count < 1)
         {
             Snackbar.Add("Dataset kosong, tidak bisa membuat sample inferensi",Severity.Info);

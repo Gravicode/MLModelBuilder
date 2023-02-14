@@ -26,6 +26,8 @@ namespace ModelBuilder.Models
         public string Deskripsi { get; set; }
         public string CreatedBy { get; set; }
         public string HasilTraining { get; set; }
+
+        public string Separator { get; set; } = ",";
     }
     public class UserProfile
     {

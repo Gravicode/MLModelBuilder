@@ -43,7 +43,7 @@ namespace ModelBuilder.Core.Builder
                     output.Message = "Data training tidak ditemukan.";
                     return output;
                 }
-                var dt = DataConverter.ConvertCSVtoDataTable(DataPath);
+                var dt = DataConverter.ConvertCSVtoDataTable(DataPath, Separator[0]);
                 try
                 {
                     // Load Data
