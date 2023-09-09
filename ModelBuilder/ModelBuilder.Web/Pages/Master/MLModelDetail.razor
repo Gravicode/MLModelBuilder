@@ -45,7 +45,7 @@
                             <MudTextField Label="Deskripsi" Class="mt-3"
                                           @bind-Value="TaskObject.Deskripsi" For="@(() => TaskObject.Deskripsi)" InputType="InputType.Text" />
 
-                            <MudButton HtmlTag="label" Class="mr-2" Disabled="@IsTraining"
+                            <MudButton HtmlTag="label" Class="mt-1 mr-2" Size="Size.Small" Disabled="@IsTraining"
                                        Variant="Variant.Filled"
                                        Color="Color.Primary"
                                        StartIcon="@Icons.Filled.CloudUpload"
@@ -168,7 +168,11 @@
         }
         UID = Guid.NewGuid().ToString().Replace("-", "_");//ModelBuilder.Tools.NumberGen.GenerateNumber(5); //
         mylog = ConsoleHelper.GetEventLogger();
-        mylog.PrintData += (object sender, string e) => { Logs += e+Environment.NewLine; };
+        mylog.PrintData += async (object sender, string e) => {
+            Logs += e+Environment.NewLine; 
+            await Task.Delay(1);
+            await InvokeAsync(StateHasChanged);    
+        };
         if(!string.IsNullOrEmpty(TaskObject.DatasetPath)){
             TableDataSet = ModelBuilder.Core.Helpers.DataConverter.ConvertCSVtoDataTable(TaskObject.DatasetPath,TaskObject.Separator.Trim()[0]);
         }

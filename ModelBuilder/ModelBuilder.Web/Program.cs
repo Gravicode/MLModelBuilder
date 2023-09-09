@@ -13,6 +13,8 @@ using Newtonsoft.Json;
 using System.Dynamic;
 using System.Net;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.ML.Data;
+using Microsoft.ML;
 
 var builder = WebApplication.CreateBuilder(args);
 Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
@@ -180,6 +182,8 @@ app.MapPost("/batch-inference", async (InferenceModelParam data) =>
     }  
 }).WithName("BatchInference");
 
+RunModel mdl = new RunModel();
+mdl.Run();
 
 app.Run();
 
@@ -190,3 +194,4 @@ public static class ListHelper
         return string.Join(", ", list.GetValues().ToArray());
     }
 }
+

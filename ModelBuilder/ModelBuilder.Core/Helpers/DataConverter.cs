@@ -161,7 +161,8 @@ namespace ModelBuilder.Core.Helpers
                     headers = columns;
                     foreach (string header in columns)
                     {
-                        dt.Columns.Add(header);
+                        var formatted_header = header.Replace(" ", "_");
+                        dt.Columns.Add(formatted_header);
                     }
 
                 }

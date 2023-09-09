@@ -82,10 +82,13 @@ namespace ModelBuilder.Core.Builder
                         public {param.ColOutType} {param.FieldName} {{ get; set; }}";
                         }
                        
-
+                        /*
+                        //disable because not supported anymore
                         classCode += $@"
                         [ColumnName(""Features"")]
                         public float[] Features {{ get; set; }}";
+                        */
+                        
                     }
                     var ScoreType = MLType switch
                     {
@@ -231,14 +234,13 @@ namespace ModelBuilder.Core.Builder
                     {
                         foreach (var param in ListParams[0])
                         {
-                            classCode += $@"
-                        [ColumnName(""{param.ColName}"")]
-                        public {param.ColOutType} {param.FieldName} {{ get; set; }}";
+                            classCode += $@"[ColumnName(""{param.ColName}"")] public {param.ColOutType} {param.FieldName} {{ get; set; }}";
+                            classCode += Environment.NewLine;
                         }
-                        classCode += $@"
-                        [ColumnName(""Features"")]
-                        public float[] Features {{ get; set; }}";
-
+                        /*
+                        //disable because not supported anymore
+                        classCode += $@"[ColumnName(""Features"")] public float[] Features {{ get; set; }}";
+                        */
                     }
                     var ScoreType = MLType switch
                     {

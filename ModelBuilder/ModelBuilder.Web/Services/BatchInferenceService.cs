@@ -124,8 +124,14 @@ namespace ModelBuilder.Web.Services
                     ParamObjs.Add(obj);
                 }
                 var res = await exec.ExecuteCodeBatch(ParamObjs, TaskObject.ModelPath, TaskObject.Tipe);
-
-                output.Data = res;
+                /*
+                var resStr = string.Empty;
+                foreach(var resItem in res)
+                {
+                    resStr += PropertyList(resItem); 
+                }
+                */
+                output.Data = res;// resStr;
                 output.IsSucceed = true;
 
             }
